@@ -57,3 +57,6 @@ brew install lihaoyun6/tap/quickrecorder
 
 [ChatGPT](https://chat.openai.com) @OpenAI
 > Note: Part of the code in this project was generated or refactored using ChatGPT.
+
+[Cursor](https://cursor.sh) with Claude 4.0 Sonnet @Anthropic
+> Significant portions of the codebase refactoring, error handling implementation, settings management, and comprehensive unit test suite were generated and enhanced using Cursor IDE powered by Claude 4.0 Sonnet AI.

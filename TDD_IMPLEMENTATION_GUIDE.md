@@ -203,39 +203,39 @@ xcodebuild test -project QuickRecorder.xcodeproj -scheme QuickRecorder -destinat
 ### Test Results Example
 
 ```
-Test Suite 'All tests' started at 2024-12-19 10:30:00.000
-Test Suite 'QuickRecorderTests.xctest' started at 2024-12-19 10:30:00.001
+Test Suite 'All tests' started at 2025-06-16 14:16:30.000
+Test Suite 'QuickRecorderTests.xctest' started at 2025-06-16 14:16:30.001
 
-Test Suite 'ErrorHandlerTests' started at 2024-12-19 10:30:00.002
+Test Suite 'ErrorHandlerTests' started at 2025-06-16 14:16:30.002
 Test Case '-[ErrorHandlerTests testCreateAudioFile_Success]' started.
 Test Case '-[ErrorHandlerTests testCreateAudioFile_Success]' passed (0.023 seconds).
 Test Case '-[ErrorHandlerTests testCreateAudioFile_InvalidURL]' started.
 Test Case '-[ErrorHandlerTests testCreateAudioFile_InvalidURL]' passed (0.012 seconds).
 ...
-Test Suite 'ErrorHandlerTests' passed at 2024-12-19 10:30:01.543.
+Test Suite 'ErrorHandlerTests' passed at 2025-06-16 14:16:31.543.
 	 Executed 12 tests, with 0 failures (0 unexpected) in 1.541 (1.542) seconds
 
-Test Suite 'SettingsManagerTests' started at 2024-12-19 10:30:01.544
+Test Suite 'SettingsManagerTests' started at 2025-06-16 14:16:31.544
 ...
-Test Suite 'SettingsManagerTests' passed at 2024-12-19 10:30:02.123.
+Test Suite 'SettingsManagerTests' passed at 2025-06-16 14:16:32.123.
 	 Executed 8 tests, with 0 failures (0 unexpected) in 0.578 (0.579) seconds
 
-Test Suite 'IntegrationTests' started at 2024-12-19 10:30:02.124
+Test Suite 'IntegrationTests' started at 2025-06-16 14:16:32.124
 ...
-Test Suite 'IntegrationTests' passed at 2024-12-19 10:30:04.567.
+Test Suite 'IntegrationTests' passed at 2025-06-16 14:16:34.567.
 	 Executed 9 tests, with 0 failures (0 unexpected) in 2.442 (2.443) seconds
 
-Test Suite 'ViewModelTests' started at 2024-12-19 10:30:04.569
+Test Suite 'ViewModelTests' started at 2025-06-16 14:16:34.569
 ...
-Test Suite 'ViewModelTests' passed at 2024-12-19 10:30:05.234.
+Test Suite 'ViewModelTests' passed at 2025-06-16 14:16:35.234.
 	 Executed 11 tests, with 0 failures (0 unexpected) in 0.664 (0.665) seconds
 
-Test Suite 'RecordingWorkflowTests' started at 2024-12-19 10:30:05.235
+Test Suite 'RecordingWorkflowTests' started at 2025-06-16 14:16:35.235
 ...
-Test Suite 'RecordingWorkflowTests' passed at 2024-12-19 10:30:07.123.
+Test Suite 'RecordingWorkflowTests' passed at 2025-06-16 14:16:37.123.
 	 Executed 15 tests, with 0 failures (0 unexpected) in 1.887 (1.888) seconds
 
-Test Suite 'All tests' passed at 2024-12-19 10:30:07.124.
+Test Suite 'All tests' passed at 2025-06-16 14:16:37.124.
 	 Executed 55 tests, with 0 failures (0 unexpected) in 7.556 (7.557) seconds
 ```
 
@@ -389,6 +389,6 @@ The TDD approach has transformed the QuickRecorder codebase from a potentially f
 
 ---
 
-**Last Updated**: December 19, 2024  
+**Last Updated**: June 16, 2025  
 **Test Suite Version**: 1.0  
 **Coverage Target**: 90%+ for critical components 

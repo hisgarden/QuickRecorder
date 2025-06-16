@@ -59,3 +59,6 @@ brew install lihaoyun6/tap/quickrecorder
 
 [ChatGPT](https://chat.openai.com) @OpenAI  
 > 注: 本项目部分代码使用 ChatGPT 生成或重构整理
+
+[Cursor](https://cursor.sh) with Claude 4.0 Sonnet @Anthropic
+> 项目中大量的代码重构、错误处理实现、设置管理以及完整的单元测试套件均使用 Cursor IDE 结合 Claude 4.0 Sonnet AI 生成和优化

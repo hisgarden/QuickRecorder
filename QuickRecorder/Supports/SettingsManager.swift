@@ -2,7 +2,7 @@
 //  SettingsManager.swift
 //  QuickRecorder
 //
-//  Created by Code Inspector on 2024/12/19.
+//  Created by Code Inspector on 2025/06/16.
 //
 
 import Foundation
