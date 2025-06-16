@@ -114,38 +114,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     var presenterType = "OFF"
     var frameQueue = FixedLengthArray<CMTime>(maxLength: 20)
     
-    @AppStorage("showOnDock")       var showOnDock: Bool = true
-    @AppStorage("showMenubar")      var showMenubar: Bool = false
-    @AppStorage("enableAEC")        var enableAEC: Bool = false
-    @AppStorage("recordMic")        var recordMic: Bool = false
-    @AppStorage("micDevice")        var micDevice: String = "default"
-    @AppStorage("remuxAudio")       var remuxAudio: Bool = true
-    @AppStorage("recordWinSound")   var recordWinSound: Bool = true
-    @AppStorage("recordHDR")        var recordHDR: Bool = false
-    @AppStorage("encoder")          var encoder: Encoder = .h265
-    @AppStorage("highRes")          var highRes: Int = 2
-    @AppStorage("AECLevel")         var AECLevel: String = "mid"
-    @AppStorage("withAlpha")        var withAlpha: Bool = false
-    @AppStorage("saveDirectory")    var saveDirectory: String?
-    @AppStorage("countdown")        var countdown: Int = 0
-    @AppStorage("poSafeDelay")      var poSafeDelay: Int = 1
-    @AppStorage("highlightMouse")   var highlightMouse: Bool = false
-    @AppStorage("includeMenuBar")   var includeMenuBar: Bool = true
-    @AppStorage("hideDesktopFiles") var hideDesktopFiles: Bool = false
-    @AppStorage("trimAfterRecord")  var trimAfterRecord: Bool = false
-    @AppStorage("miniStatusBar")    var miniStatusBar: Bool = false
-    @AppStorage("hideSelf")         var hideSelf: Bool = true
-    @AppStorage("preventSleep")     var preventSleep: Bool = true
-    @AppStorage("showPreview")      var showPreview: Bool = true
-    @AppStorage("background")       var background: BackgroundType = .wallpaper
-    @AppStorage("showMouse")        var showMouse: Bool = true
-    @AppStorage("frameRate")        var frameRate: Int = 60
-    @AppStorage("videoQuality")     var videoQuality: Double = 1.0
-    @AppStorage("videoFormat")      var videoFormat: VideoFormat = .mp4
-    @AppStorage("audioFormat")      var audioFormat: AudioFormat = .aac
-    @AppStorage("audioQuality")     var audioQuality: AudioQuality = .high
-    @AppStorage("pixelFormat")      var pixelFormat: PixFormat = .delault
-    @AppStorage("hideCCenter")      var hideCCenter: Bool = false
+    // Use centralized settings manager instead of scattered @AppStorage
+    private let settings = SettingsManager.shared
+    
+    // Legacy properties for compatibility - these can be gradually removed
+    var showOnDock: Bool { settings.showOnDock }
+    var showMenubar: Bool { settings.showMenubar }
+    var enableAEC: Bool { settings.enableAEC }
+    var recordMic: Bool { settings.recordMic }
+    var micDevice: String { settings.micDevice }
+    var remuxAudio: Bool { settings.remuxAudio }
+    var recordWinSound: Bool { settings.recordWinSound }
+    var recordHDR: Bool { settings.recordHDR }
+    var encoder: Encoder { settings.encoder }
+    var highRes: Int { settings.highRes }
+    var AECLevel: String { settings.AECLevel }
+    var withAlpha: Bool { settings.withAlpha }
+    var saveDirectory: String? { settings.saveDirectory }
+    var countdown: Int { settings.countdown }
+    var poSafeDelay: Int { settings.poSafeDelay }
+    var highlightMouse: Bool { settings.highlightMouse }
+    var includeMenuBar: Bool { settings.includeMenuBar }
+    var hideDesktopFiles: Bool { settings.hideDesktopFiles }
+    var trimAfterRecord: Bool { settings.trimAfterRecord }
+    var miniStatusBar: Bool { settings.miniStatusBar }
+    var hideSelf: Bool { settings.hideSelf }
+    var preventSleep: Bool { settings.preventSleep }
+    var showPreview: Bool { settings.showPreview }
+    var background: BackgroundType { settings.background }
+    var showMouse: Bool { settings.showMouse }
+    var frameRate: Int { settings.frameRate }
+    var videoQuality: Double { settings.videoQuality }
+    var videoFormat: VideoFormat { settings.videoFormat }
+    var audioFormat: AudioFormat { settings.audioFormat }
+    var audioQuality: AudioQuality { settings.audioQuality }
+    var pixelFormat: PixFormat { settings.pixelFormat }
+    var hideCCenter: Bool { settings.hideCCenter }
     
     func mousePointerReLocation(event: NSEvent) {
         if event.type == .scrollWheel { return }
@@ -244,9 +248,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
             ]
         )
         
-        if highRes == 0 { highRes = 2 }
-        if showOnDock { NSApp.setActivationPolicy(.regular) }
-        if isMacOS12 { showPreview = false; remuxAudio = false }
+        if SettingsManager.shared.highRes == 0 { 
+            UserDefaults.standard.set(2, forKey: "highRes")
+        }
+        if SettingsManager.shared.showOnDock { NSApp.setActivationPolicy(.regular) }
+        if isMacOS12 { 
+            UserDefaults.standard.set(false, forKey: "showPreview")
+            UserDefaults.standard.set(false, forKey: "remuxAudio")
+        }
         
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error { print("Notification authorization denied: \(error.localizedDescription)") }
@@ -347,7 +356,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         closeAllWindow()
-        if showOnDock { _ = applicationShouldHandleReopen(NSApp, hasVisibleWindows: true) }
+        if SettingsManager.shared.showOnDock { _ = applicationShouldHandleReopen(NSApp, hasVisibleWindows: true) }
         tips("Would you like to use H.265 format for better video quality and smaller file size?",
              id: "qr.switch-to-h265.note", buttonTitle: "Use H.265", switchButton: true) {
             ud.setValue(Encoder.h265.rawValue, forKey: "encoder")
@@ -359,7 +368,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
             let w1 = NSApp.windows.filter({ !$0.title.contains("Item-0") && !$0.title.isEmpty && $0.isVisible })
             let w2 = w1.filter({ !$0.title.contains(".qma") })
             if (!w1.isEmpty && w2.isEmpty) || w1.isEmpty {
-                let offset = (!showOnDock && !showMenubar) ? 127 : 0
+                let offset = (!SettingsManager.shared.showOnDock && !SettingsManager.shared.showMenubar) ? 127 : 0
                 let width = isMacOS12 ? 800 : 928
                 let mainPanel = EscPanel(contentRect: NSRect(x: 0, y: 0, width: width + offset, height: 100), styleMask: [.fullSizeContentView, .nonactivatingPanel], backing: .buffered, defer: false)
                 mainPanel.contentView = NSHostingView(rootView: ContentView())

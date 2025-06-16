@@ -283,7 +283,10 @@ class ScreenshotOverlayView: NSView {
         super.viewDidMoveToWindow()
         selectionRect = NSRect(x: (self.frame.width - size.width) / 2, y: (self.frame.height - size.height) / 2, width: size.width, height: size.height)
         if !force {
-            let savedArea = ud.object(forKey: "savedArea") as! [String: [String: CGFloat]]
+            let savedAreaResult = ErrorHandler.shared.parseSavedArea(from: ud.object(forKey: "savedArea"))
+            guard let savedArea = savedAreaResult.handleWithErrorReporting(context: "Failed to parse saved area", showToUser: false) else {
+                return
+            }
             if let name = self.window?.screen?.localizedName {
                 if let area = savedArea[name] {
                     selectionRect = NSRect(x: area["x"]!, y: area["y"]!, width: area["width"]!, height: area["height"]!)

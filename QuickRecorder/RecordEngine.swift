@@ -25,7 +25,7 @@ extension AppDelegate {
             default: return // if we don't even know what to record I don't think we should even try
         }
         var isDirectory: ObjCBool = false
-        let outputPath = saveDirectory!
+        let outputPath = SettingsManager.shared.getSaveDirectory()
         if fd.fileExists(atPath: outputPath, isDirectory: &isDirectory) {
             if !isDirectory.boolValue {
                 SCContext.streamType = nil
@@ -33,11 +33,10 @@ extension AppDelegate {
                 return
             }
         } else {
-            do {
-                try fd.createDirectory(atPath: outputPath, withIntermediateDirectories: true, attributes: nil)
-            } catch {
+            let result = ErrorHandler.shared.createDirectory(at: outputPath)
+            if case .failure = result {
                 SCContext.streamType = nil
-                _ = createAlert(title: "Failed to Record".local, message: "Unable to create output folder!".local, button1: "OK").runModal()
+                result.handleWithErrorReporting(context: "Failed to create output directory")
                 return
             }
         }
@@ -324,7 +323,11 @@ extension AppDelegate {
             try? fd.createDirectory(at: SCContext.filePath.url, withIntermediateDirectories: true, attributes: nil)
             try? jsonString.write(to: infoJsonURL, atomically: true, encoding: .utf8)
             
-            SCContext.audioFile = try! AVAudioFile(forWriting: SCContext.filePath1.url, settings: SCContext.updateAudioSettings(), commonFormat: .pcmFormatFloat32, interleaved: false)
+            let audioFileResult = ErrorHandler.shared.createAudioFile(url: SCContext.filePath1.url, settings: SCContext.updateAudioSettings())
+            guard let audioFile = audioFileResult.handleWithErrorReporting(context: "Failed to create system audio file") else {
+                return
+            }
+            SCContext.audioFile = audioFile
 
             let sampleRate = SCContext.getSampleRate() ?? 48000
             let settings = SCContext.updateAudioSettings(rate: sampleRate)
@@ -337,7 +340,11 @@ extension AppDelegate {
         } else {
             SCContext.filePath = "\(path).\(fileEnding)"
             SCContext.filePath1 = SCContext.filePath
-            SCContext.audioFile = try! AVAudioFile(forWriting: SCContext.filePath.url, settings: SCContext.updateAudioSettings(), commonFormat: .pcmFormatFloat32, interleaved: false)
+            let audioFileResult = ErrorHandler.shared.createAudioFile(url: SCContext.filePath.url, settings: SCContext.updateAudioSettings())
+            guard let audioFile = audioFileResult.handleWithErrorReporting(context: "Failed to create audio file") else {
+                return
+            }
+            SCContext.audioFile = audioFile
         }
     }
 }
@@ -459,7 +466,11 @@ extension AppDelegate {
                         SCContext.micInput.append(buffer.asSampleBuffer!)
                     }
                 }
-                try! SCContext.audioEngine.start()
+                let startResult = ErrorHandler.shared.startAudioEngine(SCContext.audioEngine)
+                if case .failure = startResult {
+                    startResult.handleWithErrorReporting(context: "Failed to start audio engine")
+                    return
+                }
             }
         } else {
             AudioRecorder.shared.setupAudioCapture()
@@ -579,8 +590,9 @@ extension AppDelegate {
                 if #available(macOS 14.2, *) {
                     if let rect = attachments[.presenterOverlayContentRect] as? [String: Any]{
                         var type = "np"
-                        let off = (rect["X"] as! CGFloat == .infinity)
-                        let small = (rect["X"] as! CGFloat == 0.0)
+                                    let xValue = ErrorHandler.shared.getCGFloatFromArea(rect, key: "X")
+            let off = (xValue == .infinity)
+            let small = (xValue == 0.0)
                         let big = (!off && !small)
                         if off { type = "OFF" } else if small { type = "Small" } else if big { type = "Big" }
                         if type != presenterType {

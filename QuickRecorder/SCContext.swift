@@ -288,11 +288,14 @@ class SCContext {
     
     static func getRecordingSize() -> String {
         do {
-            let fileAttr = try fd.attributesOfItem(atPath: filePath)
             let byteFormat = ByteCountFormatter()
             byteFormat.allowedUnits = [.useMB]
             byteFormat.countStyle = .file
-            return byteFormat.string(fromByteCount: fileAttr[FileAttributeKey.size] as! Int64)
+            let sizeResult = ErrorHandler.shared.getFileSize(at: filePath)
+        guard let size = sizeResult.handleWithErrorReporting(context: "Failed to get file size", showToUser: false) else {
+            return "Unknown size"
+        }
+        return byteFormat.string(fromByteCount: size)
         } catch {
             print(String(format: "failed to fetch file for size indicator: %@".local, error.localizedDescription))
         }
