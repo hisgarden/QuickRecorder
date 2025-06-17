@@ -21,9 +21,11 @@ extension AppDelegate {
                 let hasPermission = await SCContext.requestScreenRecordingPermissionIfNeeded()
                 if !hasPermission {
                     await MainActor.run {
-                        let alert = createAlert(title: "Permission Required", 
-                                               message: "Screen recording permission is required to capture content. Please grant permission in System Settings and try again.", 
-                                               button1: "OK")
+                        let alert = NSAlert()
+                        alert.messageText = "Permission Required"
+                        alert.informativeText = "Screen recording permission is required to capture content. Please grant permission in System Settings and try again."
+                        alert.addButton(withTitle: "OK")
+                        alert.alertStyle = .warning
                         alert.runModal()
                     }
                     return // Permission denied, user will be redirected to settings
@@ -51,7 +53,12 @@ extension AppDelegate {
         if fd.fileExists(atPath: outputPath, isDirectory: &isDirectory) {
             if !isDirectory.boolValue {
                 SCContext.streamType = nil
-                _ = createAlert(title: "Failed to Record".local, message: "The output path is a file instead of a folder!".local, button1: "OK").runModal()
+                let alert = NSAlert()
+                alert.messageText = "Failed to Record".local
+                alert.informativeText = "The output path is a file instead of a folder!".local
+                alert.addButton(withTitle: "OK")
+                alert.alertStyle = .warning
+                alert.runModal()
                 return
             }
         } else {

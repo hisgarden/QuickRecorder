@@ -231,25 +231,35 @@ class SCContext {
 
         ud.setValue(false, forKey: "recordMic")
         DispatchQueue.main.async {
-            let alert = createAlert(title: "Permission Required",
-                                                       message: "QuickRecorder needs permission to record your microphone.",
-                                                       button1: "Open Settings",
-                                                       button2: "Cancel")
-            if alert.runModal() == .alertFirstButtonReturn {
+            let alert = NSAlert()
+            alert.messageText = "Permission Required"
+            alert.informativeText = "QuickRecorder needs permission to record your microphone."
+            alert.addButton(withTitle: "Open Settings")
+            alert.addButton(withTitle: "Cancel")
+            alert.alertStyle = .informational
+            
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
                 NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!)
             }
         }
     }
     
     private static func requestPermissions() {
-        let alert = createAlert(title: "Permission Required",
-                                                   message: "QuickRecorder needs screen recording permissions to capture windows and screen content.\n\nAfter granting permission in System Settings, you can return to QuickRecorder and try again.",
-                                                   button1: "Open Settings",
-                                                   button2: "Cancel")
-        if alert.runModal() == .alertFirstButtonReturn {
-            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!)
+        DispatchQueue.main.async {
+            // Use a simpler approach that doesn't conflict with system permission dialogs
+            let alert = NSAlert()
+            alert.messageText = "Permission Required"
+            alert.informativeText = "QuickRecorder needs screen recording permissions to capture windows and screen content.\n\nAfter granting permission in System Settings, you can return to QuickRecorder and try again."
+            alert.addButton(withTitle: "Open Settings")
+            alert.addButton(withTitle: "Cancel")
+            alert.alertStyle = .informational
+            
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!)
+            }
         }
-        // Don't terminate the app - let the user continue using it after granting permissions
     }
     
     static func requestCameraPermission() {
@@ -259,11 +269,15 @@ class SCContext {
             break
         case .denied:
             DispatchQueue.main.async {
-                let alert = createAlert(title: "Permission Required",
-                                                           message: "QuickRecorder needs this permission to record your camera or mobile device.",
-                                                           button1: "Open Settings",
-                                                           button2: "Cancel")
-                if alert.runModal() == .alertFirstButtonReturn {
+                let alert = NSAlert()
+                alert.messageText = "Permission Required"
+                alert.informativeText = "QuickRecorder needs this permission to record your camera or mobile device."
+                alert.addButton(withTitle: "Open Settings")
+                alert.addButton(withTitle: "Cancel")
+                alert.alertStyle = .informational
+                
+                let response = alert.runModal()
+                if response == .alertFirstButtonReturn {
                     NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")!)
                 }
             }

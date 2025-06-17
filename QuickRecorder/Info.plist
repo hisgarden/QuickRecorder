@@ -48,6 +48,10 @@
 	<string>https://raw.githubusercontent.com/lihaoyun6/QuickRecorder/main/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>dP6zY7RAyK3DtV/dDrQ2V2dB0BY36jADwMKHZIX89u4=</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.7.0</string>
+	<key>CFBundleVersion</key>
+	<string>170</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
