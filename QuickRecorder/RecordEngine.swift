@@ -84,45 +84,71 @@ extension AppDelegate {
     private func continueWithRecordPreparation(type: String, screens: SCDisplay?, windows: [SCWindow]?, applications: [SCRunningApplication]?, fastStart: Bool = false) {
         // file preparation
         if let screens = screens {
-            SCContext.screen = SCContext.availableContent!.displays.first(where: { $0 == screens })
+            guard let content = SCContext.availableContent else {
+                print("Error: availableContent is nil, cannot proceed with recording")
+                SCContext.streamType = nil
+                return
+            }
+            SCContext.screen = content.displays.first(where: { $0 == screens })
         } else { SCContext.streamType = nil; return }
         
         if let windows = windows {
-            SCContext.window = SCContext.availableContent!.windows.filter({ windows.contains($0) })
+            guard let content = SCContext.availableContent else {
+                print("Error: availableContent is nil, cannot get windows")
+                SCContext.streamType = nil
+                return
+            }
+            SCContext.window = content.windows.filter({ windows.contains($0) })
         } else { if SCContext.streamType == .window { SCContext.streamType = nil; return } }
         
         if let applications = applications {
-            SCContext.application = SCContext.availableContent!.applications.filter({ applications.contains($0) })
+            guard let content = SCContext.availableContent else {
+                print("Error: availableContent is nil, cannot get applications")
+                SCContext.streamType = nil
+                return
+            }
+            SCContext.application = content.applications.filter({ applications.contains($0) })
         } else { if SCContext.streamType == .application { SCContext.streamType = nil; return } }
         
-        let screen = SCContext.screen ?? SCContext.getSCDisplayWithMouse()!
+        guard let screen = SCContext.screen ?? SCContext.getSCDisplayWithMouse() else {
+            print("Error: Cannot get display for recording")
+            SCContext.streamType = nil
+            return
+        }
+        
+        guard let content = SCContext.availableContent else {
+            print("Error: availableContent is nil, cannot continue recording setup")
+            SCContext.streamType = nil
+            return
+        }
+        
         let qrSelf = SCContext.getSelf()
         let qrWindows = SCContext.getSelfWindows()
-        let dockApp = SCContext.availableContent!.applications.first(where: { $0.bundleIdentifier.description == "com.apple.dock" })
-        let wallpaper = SCContext.availableContent!.windows.filter({
+        let dockApp = content.applications.first(where: { $0.bundleIdentifier.description == "com.apple.dock" })
+        let wallpaper = content.windows.filter({
             guard let title = $0.title else { return false }
             return $0.owningApplication?.bundleIdentifier == "com.apple.dock" && title != "LPSpringboard" && title != "Dock"
         })
-        let desktop = SCContext.availableContent!.windows.filter({
+        let desktop = content.windows.filter({
             guard let title = $0.title else { return false }
             return $0.owningApplication?.bundleIdentifier == "" && title == "Desktop"
         })
-        let dockWindow = SCContext.availableContent!.windows.filter({
+        let dockWindow = content.windows.filter({
             guard let title = $0.title else { return true }
             return $0.owningApplication?.bundleIdentifier == "com.apple.dock" && title == "Dock"
         })
-        let desktopFiles = SCContext.availableContent!.windows.filter({
+        let desktopFiles = content.windows.filter({
             $0.owningApplication?.bundleIdentifier == "com.apple.finder"
             && $0.title == "" && $0.frame == screen.frame })
-        let controlCenterWindow = SCContext.availableContent!.applications.filter({ $0.bundleIdentifier == "com.apple.controlcenter" })
-        let mouseWindow = SCContext.availableContent!.windows.filter({ $0.title == "Mouse Pointer".local && $0.owningApplication?.bundleIdentifier == Bundle.main.bundleIdentifier })
-        let camLayer = SCContext.availableContent!.windows.filter({ $0.title == "Camera Overlayer".local && $0.owningApplication?.bundleIdentifier == Bundle.main.bundleIdentifier })
+        let controlCenterWindow = content.applications.filter({ $0.bundleIdentifier == "com.apple.controlcenter" })
+        let mouseWindow = content.windows.filter({ $0.title == "Mouse Pointer".local && $0.owningApplication?.bundleIdentifier == Bundle.main.bundleIdentifier })
+        let camLayer = content.windows.filter({ $0.title == "Camera Overlayer".local && $0.owningApplication?.bundleIdentifier == Bundle.main.bundleIdentifier })
         var appBlackList = [String]()
         if let savedData = ud.data(forKey: "hiddenApps"),
            let decodedApps = try? JSONDecoder().decode([AppInfo].self, from: savedData) {
             appBlackList = (decodedApps as [AppInfo]).map({ $0.bundleID })
         }
-        let excliudedApps = SCContext.availableContent!.applications.filter({ appBlackList.contains($0.bundleIdentifier) })
+        let excliudedApps = content.applications.filter({ appBlackList.contains($0.bundleIdentifier) })
         
         if SCContext.streamType == .window || SCContext.streamType == .windows {
             if var includ = SCContext.window {
@@ -158,7 +184,11 @@ extension AppDelegate {
                 if #available(macOS 14.2, *) { SCContext.filter?.includeMenuBar = ((SCContext.streamType == .screen || SCContext.streamType == .screenarea) && includeMenuBar) }
             }
             if SCContext.streamType == .application {
-                var includ = SCContext.application!
+                guard var includ = SCContext.application else {
+                    print("Error: No applications selected for recording")
+                    SCContext.streamType = nil
+                    return
+                }
                 var except = [SCWindow]()
                 if let qrSelf = qrSelf { includ.append(qrSelf) }
                 let withFinder = includ.map{ $0.bundleIdentifier }.contains("com.apple.finder")
@@ -174,7 +204,14 @@ extension AppDelegate {
             SCContext.filter = SCContentFilter(display: screen, excludingApplications: [], exceptingWindows: [])
             prepareAudioRecording()
         }
-        Task { await record(filter: SCContext.filter!, fastStart: fastStart) }
+        
+        guard let filter = SCContext.filter else {
+            print("Error: SCContentFilter is nil, cannot start recording")
+            SCContext.streamType = nil
+            return
+        }
+        
+        Task { await record(filter: filter, fastStart: fastStart) }
     }
 
     func record(filter: SCContentFilter, fastStart: Bool = true) async {
@@ -207,19 +244,30 @@ extension AppDelegate {
                 conf.width = Int(filter.contentRect.width) * (highRes == 2 ? Int(filter.pointPixelScale) : 1)
                 conf.height = Int(filter.contentRect.height) * (highRes == 2 ? Int(filter.pointPixelScale) : 1)
             } else {
-                guard let pointPixelScaleOld = (SCContext.screen ?? SCContext.getSCDisplayWithMouse()!).nsScreen?.backingScaleFactor else { return }
+                guard let currentScreen = SCContext.screen ?? SCContext.getSCDisplayWithMouse(),
+                      let pointPixelScaleOld = currentScreen.nsScreen?.backingScaleFactor else { 
+                    print("Error: Cannot get screen or pixel scale for recording")
+                    return 
+                }
                 if SCContext.streamType == .application || SCContext.streamType == .windows || SCContext.streamType == .screen {
-                    let frame = (SCContext.screen ?? SCContext.getSCDisplayWithMouse()!).frame
+                    let frame = currentScreen.frame
                     conf.width = Int(frame.width)
                     conf.height = Int(frame.height)
                 }
                 if SCContext.streamType == .window {
-                    let frame = SCContext.window![0].frame
+                    guard let window = SCContext.window?.first else {
+                        print("Error: No window selected for recording")
+                        return
+                    }
+                    let frame = window.frame
                     conf.width = Int(frame.width)
                     conf.height = Int(frame.height)
                 }
                 if SCContext.streamType == .screenarea {
-                    let frame = SCContext.screenArea!
+                    guard let frame = SCContext.screenArea else {
+                        print("Error: No screen area selected for recording")
+                        return
+                    }
                     conf.width = Int(frame.width)
                     conf.height = Int(frame.height)
                 }
@@ -281,7 +329,11 @@ extension AppDelegate {
 
         if SCContext.streamType == .screenarea {
             if let nsRect = SCContext.screenArea {
-                let newY = SCContext.screen!.frame.height - nsRect.size.height - nsRect.origin.y
+                guard let currentScreen = SCContext.screen else {
+                    print("Error: No screen selected for screen area recording")
+                    return
+                }
+                let newY = currentScreen.frame.height - nsRect.size.height - nsRect.origin.y
                 conf.sourceRect = CGRect(x: nsRect.origin.x, y: newY, width: nsRect.size.width, height: nsRect.size.height)
                 if #available(macOS 14.0, *) {
                     conf.width = Int(conf.sourceRect.width) * (highRes == 2 ? Int(filter.pointPixelScale) : 1)
@@ -354,7 +406,7 @@ extension AppDelegate {
             case AudioFormat.opus.rawValue: fileEnding = "ogg"; fileType = .caf
             default: assertionFailure("loaded unknown audio format: ".local + fileEnding)
         }
-        let path = SCContext.getFilePath()
+        let path = SCContext.getSaveDirectory()
         if recordMic && SCContext.streamType == .systemaudio {
             SCContext.filePath = "\(path).qma"
             SCContext.filePath1 = "\(path).qma/sys.\(fileEnding)"
@@ -419,9 +471,9 @@ extension AppDelegate {
         }
 
         if remuxAudio && recordMic && recordWinSound {
-            SCContext.filePath = "\(SCContext.getFilePath()).\(fileEnding).\(fileEnding).\(fileEnding)"
+            SCContext.filePath = "\(SCContext.getSaveDirectory()).\(fileEnding).\(fileEnding).\(fileEnding)"
         } else {
-            SCContext.filePath = "\(SCContext.getFilePath()).\(fileEnding)"
+            SCContext.filePath = "\(SCContext.getSaveDirectory()).\(fileEnding)"
         }
         SCContext.vW = try? AVAssetWriter.init(outputURL: SCContext.filePath.url, fileType: fileType!)
         let encoderIsH265 = (encoder.rawValue == Encoder.h265.rawValue) || recordHDR
@@ -543,7 +595,7 @@ extension AppDelegate {
             SCContext.saveFrame = false
             
             var ciImage = CIImage(cvPixelBuffer: imageBuffer)
-            let url = "\(SCContext.getFilePath(capture: true)).png".url
+            let url = "\(SCContext.getSaveDirectory(capture: true)).png".url
             if !recordHDR {
                 sampleBuffer.nsImage?.saveToFile(url)
             } else {

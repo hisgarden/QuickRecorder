@@ -66,7 +66,8 @@ class RecorderPlayerModel: NSObject, ObservableObject {
                             var path: String?
                             path = fileUrl.deletingPathExtension().path
                             guard let path = path else { return }
-                            let filePath = path.removingPercentEncoding! + " (Cropped in ".local + "\(dateFormatter.string(from: Date())))." + fileEnding
+                            let decodedPath = path.removingPercentEncoding ?? path
+        let filePath = decodedPath + " (Cropped in ".local + "\(dateFormatter.string(from: Date())))." + fileEnding
                             exportSession?.outputURL = filePath.url
                             exportSession?.outputFileType = fileType
                             exportSession?.timeRange = timeRange

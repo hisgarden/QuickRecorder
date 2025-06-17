@@ -10,7 +10,7 @@
 		</data>
 		<key>Resources/Assets.car</key>
 		<data>
-		SJ86o4jjFkiMEdLwsqHU7TKn4A0=
+		eA2i3lfyA9xArVJ2h31WIIux0Ds=
 		</data>
 		<key>Resources/Base.lproj/Credits.rtf</key>
 		<data>
@@ -247,10 +247,10 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			jsrEirQ6GUef+Zkyf7jg9hIuDPU=
+			FXTFj1ZEBCL44tnfxjjGchHdU5c=
 			</data>
 			<key>requirement</key>
-			<string>anchor apple generic and identifier "org.sparkle-project.Sparkle" and (certificate leaf[field.1.2.840.113635.100.6.1.9] /* exists */ or certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = NSDC3EDS2G)</string>
+			<string>cdhash H"1574c58f56440422f8e2d9dfc638c67211dd5397" or cdhash H"290c5a002f45c157c335ee9b58049af993ddde8e"</string>
 		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
@@ -263,7 +263,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			zUq6ISM0dJ/W4culY5zyYtPtojJ02tkMfJ+BbcY/JaI=
+			Hf0CffB+x9n0J8Ho6YmJwve4LrWUfHqWflotCQnbM1s=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Credits.rtf</key>

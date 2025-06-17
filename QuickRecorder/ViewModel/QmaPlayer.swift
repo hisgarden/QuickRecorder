@@ -605,13 +605,15 @@ class AudioPlayerManager: ObservableObject {
                 self.setupAudioEngine()
                 
                 let title = "Recording Completed".local
-                var body = String(format: "File saved to: %@".local, url.path.removingPercentEncoding!)
+                let decodedPath = url.path.removingPercentEncoding ?? url.path
+                var body = String(format: "File saved to: %@".local, decodedPath)
                 let id = "quickrecorder.completed.\(UUID().uuidString)"
                 
                 if saveAsMP3 {
                     let oldURL = url
                     let newURl = url.deletingLastPathComponent().appendingPathComponent(lastComp).deletingPathExtension().appendingPathExtension("mp3")
-                    body = String(format: "File saved to: %@".local, newURl.path.removingPercentEncoding!)
+                    let decodedNewPath = newURl.path.removingPercentEncoding ?? newURl.path
+                body = String(format: "File saved to: %@".local, decodedNewPath)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                         Task {
                             do {

@@ -85,7 +85,9 @@ struct ContentView: View {
                                                 message: "The \"Acoustic Echo Cancellation\" is enabled, but it won't work on now.\n\nIf you need to use a specific input with AEC, set it to \"Default\" and select the device you want in System Preferences.\n\nOr you can start recording without AEC.".local,
                                                 button1: "OK".local, button2: "System Preferences".local)
                                             if alert.runModal() == .alertSecondButtonReturn {
-                                                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.sound?input")!)
+                                                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.sound?input") {
+                    NSWorkspace.shared.open(url)
+                }
                                             }
                                         } label: {
                                             ZStack {
