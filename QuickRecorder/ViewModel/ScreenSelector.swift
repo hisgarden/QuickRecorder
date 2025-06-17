@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 
 struct ScreenSelector: View {
     @Environment(\.colorScheme) var colorScheme
@@ -161,6 +161,7 @@ struct ScreenSelector: View {
     }
 }
 
+@MainActor
 class ScreenSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCStreamOutput {
     @Published var screenThumbnails = [ScreenThumbnail]()
     private var allScreens = [SCDisplay]()
@@ -168,22 +169,27 @@ class ScreenSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
     
     override init() {
         super.init()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
             self.setupStreams()
         }
     }
     
-    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+    nonisolated func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
         if CMSampleBufferGetImageBuffer(sampleBuffer) == nil { return }
         var nsImage = sampleBuffer.nsImage
-        if let index = self.streams.firstIndex(of: stream), index + 1 <= self.allScreens.count {
+        
+        Task { @MainActor in
+            guard let index = self.streams.firstIndex(of: stream), index + 1 <= self.allScreens.count else { return }
+            
             if nsImage == nil { nsImage = SCContext.getWallpaper(self.allScreens[index]) ?? NSImage.unknowScreen }
             let currentScreen = self.allScreens[index]
             let thumbnail = ScreenThumbnail(image: nsImage!, screen: currentScreen)
-            DispatchQueue.main.async {
-                if !self.screenThumbnails.contains(where: { $0.screen == currentScreen }) { self.screenThumbnails.append(thumbnail) }
+            
+            if !self.screenThumbnails.contains(where: { $0.screen == currentScreen }) { 
+                self.screenThumbnails.append(thumbnail) 
             }
-            self.streams[index].stopCapture()
+            try? await self.streams[index].stopCapture()
         }
     }
 
@@ -192,7 +198,7 @@ class ScreenSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
             Task {
                 do {
                     self.streams.removeAll()
-                    DispatchQueue.main.async { self.screenThumbnails.removeAll() }
+                    await MainActor.run { self.screenThumbnails.removeAll() }
                     guard let screens = SCContext.availableContent?.displays else { return }
                     self.allScreens = screens
                     let qrSelf = SCContext.getSelf()
@@ -219,7 +225,7 @@ class ScreenSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
     }
 }
 
-class ScreenThumbnail {
+class ScreenThumbnail: @unchecked Sendable {
     let image: NSImage
     let screen: SCDisplay
 

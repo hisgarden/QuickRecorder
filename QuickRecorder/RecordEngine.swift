@@ -15,6 +15,28 @@ import AECAudioStream
 
 extension AppDelegate {
     @objc func prepRecord(type: String, screens: SCDisplay?, windows: [SCWindow]?, applications: [SCRunningApplication]?, fastStart: Bool = false) {
+        // Check screen recording permissions first (except for audio-only recording)
+        Task {
+            if type != "audio" {
+                let hasPermission = await SCContext.requestScreenRecordingPermissionIfNeeded()
+                if !hasPermission {
+                    await MainActor.run {
+                        let alert = createAlert(title: "Permission Required", 
+                                               message: "Screen recording permission is required to capture content. Please grant permission in System Settings and try again.", 
+                                               button1: "OK")
+                        alert.runModal()
+                    }
+                    return // Permission denied, user will be redirected to settings
+                }
+            }
+            
+            await MainActor.run {
+                continueWithRecord(type: type, screens: screens, windows: windows, applications: applications, fastStart: fastStart)
+            }
+        }
+    }
+    
+    private func continueWithRecord(type: String, screens: SCDisplay?, windows: [SCWindow]?, applications: [SCRunningApplication]?, fastStart: Bool = false) {
         switch type {
         case "window":  SCContext.streamType = .window
         case "windows":  SCContext.streamType = .windows
@@ -41,6 +63,18 @@ extension AppDelegate {
             }
         }
         
+        // Ensure we have available content before proceeding
+        if SCContext.availableContent == nil {
+            SCContext.updateAvailableContent {
+                self.continueWithRecordPreparation(type: type, screens: screens, windows: windows, applications: applications, fastStart: fastStart)
+            }
+            return
+        }
+        
+        continueWithRecordPreparation(type: type, screens: screens, windows: windows, applications: applications, fastStart: fastStart)
+    }
+    
+    private func continueWithRecordPreparation(type: String, screens: SCDisplay?, windows: [SCWindow]?, applications: [SCRunningApplication]?, fastStart: Bool = false) {
         // file preparation
         if let screens = screens {
             SCContext.screen = SCContext.availableContent!.displays.first(where: { $0 == screens })

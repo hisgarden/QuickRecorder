@@ -203,8 +203,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     }
     
     func applicationWillFinishLaunching(_ notification: Notification) {
-        scPerm = SCContext.updateAvailableContentSync() != nil
-        
+        // Check for multiple instances first
         let process = NSWorkspace.shared.runningApplications.filter({ $0.bundleIdentifier == "com.lihaoyun6.QuickRecorder" })
         if process.count > 1 {
             DispatchQueue.main.async {
@@ -212,6 +211,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
                 if button == .alertFirstButtonReturn { NSApp.terminate(self) }
             }
         }
+        
+        // Don't immediately check for screen recording permissions on startup
+        // This prevents the permission dialog from appearing immediately when the app launches
+        // Permissions will be checked when the user actually tries to record
+        scPerm = false
         
         lazy var userDesktop = (NSSearchPathForDirectoriesInDomains(.desktopDirectory, .userDomainMask, true) as [String]).first!
         

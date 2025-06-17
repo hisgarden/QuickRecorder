@@ -8,7 +8,7 @@
 import SwiftUI
 import Foundation
 import AVFoundation
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 
 struct WinSelector: View {
     @Environment(\.colorScheme) var colorScheme
@@ -254,6 +254,7 @@ struct WinSelector: View {
     }
 }
 
+@MainActor
 class WindowSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCStreamOutput {
     @Published var windowThumbnails = [SCDisplay:[WindowThumbnail]]()
     @Published var isReady = false
@@ -262,32 +263,43 @@ class WindowSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
     
     override init() {
         super.init()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
             self.setupStreams()
         }
     }
     
-    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+    nonisolated func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
         if CMSampleBufferGetImageBuffer(sampleBuffer) == nil { return }
         let nsImage = sampleBuffer.nsImage ?? NSImage.unknowScreen
-        if let index = self.streams.firstIndex(of: stream), index + 1 <= self.allWindows.count {
+        
+        Task { @MainActor in
+            guard let index = self.streams.firstIndex(of: stream), index + 1 <= self.allWindows.count else { return }
+            
             let currentWindow = self.allWindows[index]
             let thumbnail = WindowThumbnail(image: nsImage, window: currentWindow)
             guard let displays = SCContext.availableContent?.displays.filter({ NSIntersectsRect(currentWindow.frame, $0.frame) }) else {
-                self.streams[index].stopCapture()
+                try? await self.streams[index].stopCapture()
                 return
             }
             for d in displays {
-                DispatchQueue.main.async {
-                    if self.windowThumbnails[d] != nil {
-                        if !self.windowThumbnails[d]!.contains(where: { $0.window == currentWindow }) { self.windowThumbnails[d]!.append(thumbnail) }
-                    } else {
-                        self.windowThumbnails[d] = [thumbnail]
+                if self.windowThumbnails[d] != nil {
+                    if !self.windowThumbnails[d]!.contains(where: { $0.window == currentWindow }) { 
+                        self.windowThumbnails[d]!.append(thumbnail) 
                     }
+                } else {
+                    self.windowThumbnails[d] = [thumbnail]
                 }
             }
-            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { self.streams[index].stopCapture() }
-            if index + 1 == self.streams.count { DispatchQueue.main.async { self.isReady = true }}
+            
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                try? await self.streams[index].stopCapture()
+            }
+            
+            if index + 1 == self.streams.count { 
+                self.isReady = true
+            }
         }
     }
 
@@ -296,7 +308,7 @@ class WindowSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
             Task {
                 do {
                     self.streams.removeAll()
-                    DispatchQueue.main.async { self.windowThumbnails.removeAll() }
+                    await MainActor.run { self.windowThumbnails.removeAll() }
                     self.allWindows = SCContext.getWindows().filter({
                         !($0.title == "" && $0.owningApplication?.bundleIdentifier == "com.apple.finder")
                         && $0.owningApplication?.bundleIdentifier != Bundle.main.bundleIdentifier
@@ -329,7 +341,7 @@ class WindowSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
                             let thumbnail = WindowThumbnail(image: NSImage.unknowScreen, window: w)
                             guard let displays = SCContext.availableContent?.displays.filter({ NSIntersectsRect(w.frame, $0.frame) }) else { break }
                             for d in displays {
-                                DispatchQueue.main.async {
+                                await MainActor.run {
                                     if self.windowThumbnails[d] != nil {
                                         if !self.windowThumbnails[d]!.contains(where: { $0.window == w }) {
                                             self.windowThumbnails[d]!.append(thumbnail)
@@ -340,7 +352,10 @@ class WindowSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
                                 }
                             }
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { self.isReady = true }
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                            self.isReady = true 
+                        }
                     }
                 } catch {
                     print("Get windowshot error：\(error)")
@@ -350,7 +365,7 @@ class WindowSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
     }
 }
 
-class WindowThumbnail {
+class WindowThumbnail: @unchecked Sendable {
     let image: NSImage
     let window: SCWindow
 

@@ -171,17 +171,20 @@ extension XCTestCase {
         XCTAssertGreaterThanOrEqual(settingsManager.frameRate, 1, "Frame rate should be at least 1", file: file, line: line)
         XCTAssertLessThanOrEqual(settingsManager.frameRate, 120, "Frame rate should not exceed 120", file: file, line: line)
         
-        XCTAssertGreaterThanOrEqual(settingsManager.videoQuality, 0, "Video quality should be at least 0", file: file, line: line)
-        XCTAssertLessThanOrEqual(settingsManager.videoQuality, 4, "Video quality should not exceed 4", file: file, line: line)
+        XCTAssertGreaterThanOrEqual(settingsManager.videoQuality, 0.0, "Video quality should be at least 0.0", file: file, line: line)
+        XCTAssertLessThanOrEqual(settingsManager.videoQuality, 1.0, "Video quality should not exceed 1.0", file: file, line: line)
         
-        XCTAssertGreaterThanOrEqual(settingsManager.audioQuality, 0, "Audio quality should be at least 0", file: file, line: line)
-        XCTAssertLessThanOrEqual(settingsManager.audioQuality, 2, "Audio quality should not exceed 2", file: file, line: line)
+        // AudioQuality is an enum, so we test the raw value
+        XCTAssertGreaterThanOrEqual(settingsManager.audioQuality.rawValue, 0, "Audio quality should be at least 0", file: file, line: line)
+        XCTAssertLessThanOrEqual(settingsManager.audioQuality.rawValue, 2, "Audio quality should not exceed 2", file: file, line: line)
         
-        XCTAssertGreaterThanOrEqual(settingsManager.micVolume, 0.0, "Mic volume should be at least 0.0", file: file, line: line)
-        XCTAssertLessThanOrEqual(settingsManager.micVolume, 1.0, "Mic volume should not exceed 1.0", file: file, line: line)
+        // Area dimensions
+        XCTAssertGreaterThanOrEqual(settingsManager.areaWidth, 100, "Area width should be at least 100", file: file, line: line)
+        XCTAssertGreaterThanOrEqual(settingsManager.areaHeight, 100, "Area height should be at least 100", file: file, line: line)
         
-        XCTAssertGreaterThanOrEqual(settingsManager.systemAudioVolume, 0.0, "System audio volume should be at least 0.0", file: file, line: line)
-        XCTAssertLessThanOrEqual(settingsManager.systemAudioVolume, 1.0, "System audio volume should not exceed 1.0", file: file, line: line)
+        // High resolution setting
+        XCTAssertGreaterThanOrEqual(settingsManager.highRes, 0, "High res should be at least 0", file: file, line: line)
+        XCTAssertLessThanOrEqual(settingsManager.highRes, 2, "High res should not exceed 2", file: file, line: line)
     }
 }
 
@@ -191,46 +194,48 @@ extension XCTestCase {
 class TestDataGenerator {
     
     /// Generates random valid settings configuration
-    static func randomValidSettings() -> (frameRate: Int, videoQuality: Int, audioQuality: Int, micVolume: Float, systemVolume: Float) {
+    static func randomValidSettings() -> (frameRate: Int, videoQuality: Double, areaWidth: Int, areaHeight: Int) {
         let frameRates = [24, 30, 60, 120]
-        let videoQualities = [0, 1, 2, 3, 4]
-        let audioQualities = [0, 1, 2]
+        let videoQuality = Double.random(in: 0.0...1.0)
+        let widths = [640, 800, 1024, 1280, 1920]
+        let heights = [480, 600, 768, 720, 1080]
         
         return (
             frameRate: frameRates.randomElement()!,
-            videoQuality: videoQualities.randomElement()!,
-            audioQuality: audioQualities.randomElement()!,
-            micVolume: Float.random(in: 0.0...1.0),
-            systemVolume: Float.random(in: 0.0...1.0)
+            videoQuality: videoQuality,
+            areaWidth: widths.randomElement()!,
+            areaHeight: heights.randomElement()!
         )
     }
     
     /// Generates test audio settings for different quality levels
-    static func audioSettings(for quality: Int) -> [String: Any] {
+    static func audioSettings(for quality: AudioQuality) -> [String: Any] {
         switch quality {
-        case 0: // Low
+        case .normal:
             return [
                 "AVFormatIDKey": 1633772320,
                 "AVSampleRateKey": 22050,
                 "AVNumberOfChannelsKey": 1
             ]
-        case 1: // Medium
+        case .good:
             return TestConfiguration.defaultAudioSettings
-        case 2: // High
+        case .high:
             return TestConfiguration.highQualityAudioSettings
-        default:
-            return TestConfiguration.defaultAudioSettings
+        case .extreme:
+            return [
+                "AVFormatIDKey": 1633772320,
+                "AVSampleRateKey": 48000,
+                "AVNumberOfChannelsKey": 2
+            ]
         }
     }
     
     /// Generates test file names with proper extensions
-    static func testFileName(for format: Int) -> String {
+    static func testFileName(for format: VideoFormat) -> String {
         let timestamp = Int(Date().timeIntervalSince1970)
         switch format {
-        case 0: return "test-recording-\(timestamp).mov"
-        case 1: return "test-recording-\(timestamp).mp4"
-        case 2: return "test-recording-\(timestamp).m4v"
-        default: return "test-recording-\(timestamp).mov"
+        case .mov: return "test-recording-\(timestamp).mov"
+        case .mp4: return "test-recording-\(timestamp).mp4"
         }
     }
 } 

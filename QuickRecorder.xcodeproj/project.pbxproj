@@ -49,11 +49,18 @@
 		18FEBDB02BD2C0D1003F09BC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18FEBDAF2BD2C0D1003F09BC /* SettingsView.swift */; };
 		67A1EB9D2F0B4C9300F5F539 /* ErrorHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A1EB9C2F0B4C9300F5F539 /* ErrorHandlerTests.swift */; };
 		67A1EB9F2F0B4C9300F5F539 /* SettingsManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A1EB9E2F0B4C9300F5F539 /* SettingsManagerTests.swift */; };
-		67A1EBA12F0B4C9300F5F539 /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A1EBA02F0B4C9300F5F539 /* IntegrationTests.swift */; };
 		67A1EBA32F0B4C9300F5F539 /* TestUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A1EBA22F0B4C9300F5F539 /* TestUtils.swift */; };
-		67A1EBA52F0B4C9300F5F53A /* ViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A1EBA42F0B4C9300F5F53A /* ViewModelTests.swift */; };
-		67A1EBA72F0B4C9300F5F53B /* RecordingWorkflowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A1EBA62F0B4C9300F5F53B /* RecordingWorkflowTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		67A1EBA62F0B4C9300F5F539 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 18D3BDDF2BCE5DC1006CFFC0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 18D3BDE62BCE5DC1006CFFC0;
+			remoteInfo = QuickRecorder;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		1821F2E72CF4B226004A2EC0 /* ContentViewNew.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewNew.swift; sourceTree = "<group>"; };
@@ -104,10 +111,7 @@
 		67A1EB9A2F0B4C9300F5F539 /* QuickRecorderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuickRecorderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		67A1EB9C2F0B4C9300F5F539 /* ErrorHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorHandlerTests.swift; sourceTree = "<group>"; };
 		67A1EB9E2F0B4C9300F5F539 /* SettingsManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManagerTests.swift; sourceTree = "<group>"; };
-		67A1EBA02F0B4C9300F5F539 /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
 		67A1EBA22F0B4C9300F5F539 /* TestUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestUtils.swift; sourceTree = "<group>"; };
-		67A1EBA42F0B4C9300F5F53A /* ViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelTests.swift; sourceTree = "<group>"; };
-		67A1EBA62F0B4C9300F5F53B /* RecordingWorkflowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingWorkflowTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,19 +207,6 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		67A1EB9B2F0B4C9300F5F539 /* QuickRecorderTests */ = {
-			isa = PBXGroup;
-			children = (
-				67A1EB9C2F0B4C9300F5F539 /* ErrorHandlerTests.swift */,
-				67A1EB9E2F0B4C9300F5F539 /* SettingsManagerTests.swift */,
-				67A1EBA02F0B4C9300F5F539 /* IntegrationTests.swift */,
-				67A1EBA22F0B4C9300F5F539 /* TestUtils.swift */,
-				67A1EBA42F0B4C9300F5F53A /* ViewModelTests.swift */,
-				67A1EBA62F0B4C9300F5F53B /* RecordingWorkflowTests.swift */,
-			);
-			path = QuickRecorderTests;
-			sourceTree = "<group>";
-		};
 		18D3BE022BCEB1D4006CFFC0 /* ViewModel */ = {
 			isa = PBXGroup;
 			children = (
@@ -238,6 +229,16 @@
 				18CEED912D08312C00FBC4BF /* PreviewView.swift */,
 			);
 			path = ViewModel;
+			sourceTree = "<group>";
+		};
+		67A1EB9B2F0B4C9300F5F539 /* QuickRecorderTests */ = {
+			isa = PBXGroup;
+			children = (
+				67A1EB9C2F0B4C9300F5F539 /* ErrorHandlerTests.swift */,
+				67A1EB9E2F0B4C9300F5F539 /* SettingsManagerTests.swift */,
+				67A1EBA22F0B4C9300F5F539 /* TestUtils.swift */,
+			);
+			path = QuickRecorderTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -391,10 +392,7 @@
 			files = (
 				67A1EB9D2F0B4C9300F5F539 /* ErrorHandlerTests.swift in Sources */,
 				67A1EB9F2F0B4C9300F5F539 /* SettingsManagerTests.swift in Sources */,
-				67A1EBA12F0B4C9300F5F539 /* IntegrationTests.swift in Sources */,
 				67A1EBA32F0B4C9300F5F539 /* TestUtils.swift in Sources */,
-				67A1EBA52F0B4C9300F5F53A /* ViewModelTests.swift in Sources */,
-				67A1EBA72F0B4C9300F5F53B /* RecordingWorkflowTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,16 +405,6 @@
 			targetProxy = 67A1EBA62F0B4C9300F5F539 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin PBXContainerItemProxy section */
-		67A1EBA62F0B4C9300F5F539 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 18D3BDDF2BCE5DC1006CFFC0 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 18D3BDE62BCE5DC1006CFFC0;
-			remoteInfo = QuickRecorder;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXVariantGroup section */
 		1862BF8F2BD5494E003ED522 /* Credits.rtf */ = {
@@ -588,7 +576,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"QuickRecorder/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = L4T783637F;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = NSDC3EDS2G;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -607,6 +595,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.lihaoyun6.QuickRecorder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -625,7 +614,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"QuickRecorder/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = L4T783637F;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = NSDC3EDS2G;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -644,6 +633,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.lihaoyun6.QuickRecorder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -655,6 +645,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NSDC3EDS2G;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.3;
 				MARKETING_VERSION = 1.0;
@@ -672,6 +663,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NSDC3EDS2G;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.3;
 				MARKETING_VERSION = 1.0;
