@@ -98,9 +98,11 @@ class ErrorHandlerTests: XCTestCase {
         let audioEngine = AVAudioEngine()
         
         // Set up basic audio engine configuration for testing
-        let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2)!
         let inputNode = audioEngine.inputNode
         let outputNode = audioEngine.outputNode
+        
+        // Use the native input format instead of a hardcoded one
+        let format = inputNode.inputFormat(forBus: 0)
         
         // Connect input to output to ensure valid graph
         audioEngine.connect(inputNode, to: outputNode, format: format)
