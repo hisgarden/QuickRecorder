@@ -10,7 +10,27 @@ import SwiftUI
 
 /// Centralized settings manager to replace scattered @AppStorage declarations
 /// and provide type-safe access to user preferences
+/// 
+/// This singleton class consolidates all user preferences and settings into a single,
+/// well-organized location. It eliminates the scattered @AppStorage declarations
+/// throughout the codebase and provides a clean, type-safe API for accessing settings.
+/// 
+/// Key benefits:
+/// - Single source of truth for all application settings
+/// - Type-safe access with proper validation
+/// - Centralized default values and range validation
+/// - Easy testing with mockable interface
+/// - Better maintainability and organization
+/// - Automatic UserDefaults synchronization
+/// 
+/// Usage:
+/// ```swift
+/// let settings = SettingsManager.shared
+/// settings.recordMic = true
+/// let isRecording = settings.recordMic
+/// ```
 class SettingsManager: ObservableObject {
+    /// Shared singleton instance for global settings access
     static let shared = SettingsManager()
     
     private let userDefaults = UserDefaults.standard

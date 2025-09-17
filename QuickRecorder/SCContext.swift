@@ -95,8 +95,12 @@ class SCContext {
         SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: false) { content, error in
             if let error = error {
                 switch error {
-                case SCStreamError.userDeclined: requestPermissions()
-                default: print("Error: failed to fetch available content: ".local, error.localizedDescription)
+                case SCStreamError.userDeclined: 
+                    print("Screen recording permission declined by user")
+                    // Don't call requestPermissions() directly - let the proper permission flow handle this
+                    return
+                default: 
+                    print("Error: failed to fetch available content: ".local, error.localizedDescription)
                 }
                 return
             }
@@ -279,25 +283,6 @@ class SCContext {
             let response = alert.runModal()
             if response == .alertFirstButtonReturn {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
-                    NSWorkspace.shared.open(url)
-                }
-            }
-        }
-    }
-    
-    private static func requestPermissions() {
-        DispatchQueue.main.async {
-            // Use a simpler approach that doesn't conflict with system permission dialogs
-            let alert = NSAlert()
-            alert.messageText = "Permission Required"
-            alert.informativeText = "QuickRecorder needs screen recording permissions to capture windows and screen content.\n\nAfter granting permission in System Settings, you can return to QuickRecorder and try again."
-            alert.addButton(withTitle: "Open Settings")
-            alert.addButton(withTitle: "Cancel")
-            alert.alertStyle = .informational
-            
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
                     NSWorkspace.shared.open(url)
                 }
             }
@@ -815,18 +800,22 @@ class SCContext {
     }
     
     static func checkScreenRecordingPermission() async -> Bool {
-        // Check if screen recording permission is available without triggering permission dialog
-        // This is done by checking if we can get shareable content
+        // Use a simple approach: try to get content and handle the response
+        // If we get content, permissions are granted
+        // If we get userDeclined error, permissions are not granted  
+        // If we get other errors, assume permissions issue
         return await withCheckedContinuation { continuation in
             SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: true) { content, error in
                 if let error = error {
                     if let scError = error as? SCStreamError, scError.code == .userDeclined {
+                        // User explicitly declined - don't update availableContent
                         continuation.resume(returning: false)
                     } else {
                         print("Error checking screen recording permission: \(error.localizedDescription)")
                         continuation.resume(returning: false)
                     }
                 } else if let content = content {
+                    // Successfully got content - permissions are granted
                     availableContent = content
                     continuation.resume(returning: true)
                 } else {
@@ -837,16 +826,38 @@ class SCContext {
     }
     
     static func requestScreenRecordingPermissionIfNeeded() async -> Bool {
+        // First, check if we already have permissions by trying to get content
+        // This will only show the system dialog if permissions haven't been granted yet
         let hasPermission = await checkScreenRecordingPermission()
-        if !hasPermission {
-            await MainActor.run {
-                requestPermissions()
-            }
-            
-            // After showing the dialog, check permissions again
-            // This allows the user to grant permissions and continue
-            return await checkScreenRecordingPermission()
+        if hasPermission {
+            // We already have permissions, proceed with recording
+            return true
         }
-        return hasPermission
+        
+        // If we don't have permissions, the system dialog was already shown by checkScreenRecordingPermission()
+        // Now wait a moment and check again to see if user granted permissions
+        try? await Task.sleep(nanoseconds: 500_000_000) // Wait 0.5 seconds
+        
+        let permissionGranted = await checkScreenRecordingPermission()
+        if !permissionGranted {
+            // User did not grant permissions, show our custom informational dialog
+            await MainActor.run {
+                let alert = NSAlert()
+                alert.messageText = "Screen Recording Permission Required"
+                alert.informativeText = "QuickRecorder needs screen recording permission to capture screen content. Please grant permission in System Settings > Privacy & Security > Screen Recording and try again."
+                alert.addButton(withTitle: "Open System Settings")
+                alert.addButton(withTitle: "Cancel")
+                alert.alertStyle = .informational
+                
+                let response = alert.runModal()
+                if response == .alertFirstButtonReturn {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+            }
+        }
+        
+        return permissionGranted
     }
 }

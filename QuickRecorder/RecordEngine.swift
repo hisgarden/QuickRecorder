@@ -20,15 +20,8 @@ extension AppDelegate {
             if type != "audio" {
                 let hasPermission = await SCContext.requestScreenRecordingPermissionIfNeeded()
                 if !hasPermission {
-                    await MainActor.run {
-                        let alert = NSAlert()
-                        alert.messageText = "Permission Required"
-                        alert.informativeText = "Screen recording permission is required to capture content. Please grant permission in System Settings and try again."
-                        alert.addButton(withTitle: "OK")
-                        alert.alertStyle = .warning
-                        alert.runModal()
-                    }
-                    return // Permission denied, user will be redirected to settings
+                    // Permission was denied, requestScreenRecordingPermissionIfNeeded already showed appropriate dialog
+                    return
                 }
             }
             

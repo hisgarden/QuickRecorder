@@ -174,20 +174,36 @@ class AppSelectorViewModel: ObservableObject {
     @Published var isReady = false
     
     init() {
+        Task { _ = await SCContext.requestScreenRecordingPermissionIfNeeded() }
         updateAppList()
     }
     
     func updateAppList() {
-        SCContext.updateAvailableContent {
-            guard let screens = SCContext.availableContent?.displays else { return }
-            for screen in screens {
-                var apps = [SCRunningApplication]()
-                let windows = SCContext.getWindows().filter({ NSIntersectsRect(screen.frame, $0.frame) })
-                for app in windows.map({ $0.owningApplication }) { if !apps.contains(app!) { apps.append(app!) }}
-                if ud.bool(forKey: "hideSelf") { apps = apps.filter({$0.bundleIdentifier != Bundle.main.bundleIdentifier}) }
-                DispatchQueue.main.async { self.allApps[screen] = apps }
+        // Request/check permission first to avoid repeatedly showing the custom alert when
+        // the user has not granted screen-recording access yet.
+        Task {
+            let hasPermission = await SCContext.checkScreenRecordingPermission()
+            guard hasPermission else {
+                // Permission not granted – keep UI empty but mark as ready so that
+                // the view stops showing the progress indicator.
+                await MainActor.run {
+                    self.allApps.removeAll()
+                    self.isReady = true
+                }
+                return
             }
-            DispatchQueue.main.async { self.isReady = true }
+
+            SCContext.updateAvailableContent {
+                guard let screens = SCContext.availableContent?.displays else { return }
+                for screen in screens {
+                    var apps = [SCRunningApplication]()
+                    let windows = SCContext.getWindows().filter({ NSIntersectsRect(screen.frame, $0.frame) })
+                    for app in windows.map({ $0.owningApplication }) { if !apps.contains(app!) { apps.append(app!) }}
+                    if ud.bool(forKey: "hideSelf") { apps = apps.filter({$0.bundleIdentifier != Bundle.main.bundleIdentifier}) }
+                    DispatchQueue.main.async { self.allApps[screen] = apps }
+                }
+                DispatchQueue.main.async { self.isReady = true }
+            }
         }
     }
     

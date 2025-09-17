@@ -10,15 +10,36 @@ import AVFoundation
 import UserNotifications
 
 /// Comprehensive error handling utility for QuickRecorder
+/// 
+/// This enum defines all possible errors that can occur during recording operations.
+/// Each error case includes contextual information to help with debugging and user feedback.
+/// All errors conform to LocalizedError for proper user-facing error messages.
 enum RecordingError: LocalizedError {
+    /// Audio file creation failed with specific error details
     case audioFileCreationFailed(String)
+    
+    /// Audio engine startup failed with specific error details
     case audioEngineStartFailed(String)
+    
+    /// Video asset writer creation failed with specific error details
     case videoWriterCreationFailed(String)
+    
+    /// Directory creation failed with specific error details
     case directoryCreationFailed(String)
+    
+    /// Unsupported audio format was requested
     case audioFormatUnsupported(String)
+    
+    /// File size information could not be retrieved
     case fileSizeCastFailed
+    
+    /// Saved area coordinates could not be parsed
     case savedAreaCastFailed
+    
+    /// Screen capture setup failed with specific error details
     case screenCaptureSetupFailed(String)
+    
+    /// Export operation failed with specific error details
     case exportFailed(String)
     
     var errorDescription: String? {
@@ -45,8 +66,21 @@ enum RecordingError: LocalizedError {
     }
 }
 
-/// Error handler for safe operations
+/// Error handler for safe operations throughout QuickRecorder
+/// 
+/// This singleton class provides centralized error handling and safe operation wrappers
+/// for all critical operations in the application. It eliminates dangerous force unwraps
+/// and provides consistent error handling patterns.
+/// 
+/// Key features:
+/// - Safe audio file creation with proper error handling
+/// - Safe audio engine startup with fallback mechanisms
+/// - Safe video writer creation with validation
+/// - Safe directory operations with user-friendly error messages
+/// - Type-safe casting operations with fallback values
+/// - Automatic error reporting and user notification
 class ErrorHandler {
+    /// Shared singleton instance for global error handling
     static let shared = ErrorHandler()
     
     private init() {}
