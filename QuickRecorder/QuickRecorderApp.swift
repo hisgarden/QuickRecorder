@@ -245,11 +245,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         )
         
         if highRes == 0 { highRes = 2 }
-        if showOnDock { NSApp.setActivationPolicy(.regular) }
+        // Set activation policy only once to prevent multiple dock icons
+        struct ActivationPolicySet { static var isSet = false }
+        if showOnDock && !ActivationPolicySet.isSet {
+            ActivationPolicySet.isSet = true
+            NSApp.setActivationPolicy(.regular)
+        }
         if isMacOS12 { showPreview = false; remuxAudio = false }
         
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error { print("Notification authorization denied: \(error.localizedDescription)") }
+        // Request notification permissions on main thread to avoid crashes on macOS
+        // Skip during test execution to avoid XCTest sandbox issues
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+            DispatchQueue.main.async {
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                    if let error = error { print("Notification authorization denied: \(error.localizedDescription)") }
+                }
+            }
         }
         
         var allow : UInt32 = 1
@@ -473,8 +484,13 @@ func process(path: String, arguments: [String]) -> String? {
 }
 
 func tips(_ message: String, title: String? = nil, id: String, buttonTitle: String = "OK", switchButton: Bool = false, width: Int? = nil, action: (() -> Void)? = nil) {
+    // Prevent showing multiple tips dialogs at the same time
+    struct TipShown { static var currentTipId: String? = nil }
+    if TipShown.currentTipId == id { return }
+    
     let never = (ud.object(forKey: "neverRemindMe") as? [String]) ?? []
     if !never.contains(id) {
+        TipShown.currentTipId = id
         if switchButton {
             let alert = createAlert(title: title ?? Bundle.main.appName + " Tips".local, message: message, button1: buttonTitle, button2: "Don't remind me again", width: width).runModal()
             if alert == .alertSecondButtonReturn { ud.setValue(never + [id], forKey: "neverRemindMe") }
@@ -484,6 +500,7 @@ func tips(_ message: String, title: String? = nil, id: String, buttonTitle: Stri
             if alert == .alertFirstButtonReturn { ud.setValue(never + [id], forKey: "neverRemindMe") }
             if alert == .alertSecondButtonReturn { action?() }
         }
+        TipShown.currentTipId = nil
     }
 }
 
@@ -547,6 +564,17 @@ extension NSMenuItem {
 }
 
 extension NSImage {
+    /// Placeholder image for unknown/unsupported screens
+    static var unknownScreen: NSImage {
+        let size = NSSize(width: 100, height: 100)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSColor.gray.setFill()
+        NSRect(origin: .zero, size: size).fill()
+        image.unlockFocus()
+        return image
+    }
+    
     static func createScreenShot() -> NSImage? {
         let excludedAppBundleIDs = ["dev.hisgarden.QuickRecorder"]
         var exclusionPIDs = [Int]()
