@@ -232,7 +232,7 @@ struct ContentView: View {
                         }, label: {
                             SelectorView(title: "Quit".local, symbol: "xmark.circle")
                                 .cornerRadius(8)
-                                .foregroundStyle(.darkMyRed)
+                                .foregroundStyle(Color.darkMyRed)
                         }).buttonStyle(.plain)
                     }
                     if !fromStatusBar { Spacer() }

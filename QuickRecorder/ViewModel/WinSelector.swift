@@ -269,7 +269,7 @@ class WindowSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
     
     func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
         if CMSampleBufferGetImageBuffer(sampleBuffer) == nil { return }
-        let nsImage = sampleBuffer.nsImage ?? NSImage.unknowScreen
+        let nsImage = sampleBuffer.nsImage ?? NSImage.unknownScreen
         if let index = self.streams.firstIndex(of: stream), index + 1 <= self.allWindows.count {
             let currentWindow = self.allWindows[index]
             let thumbnail = WindowThumbnail(image: nsImage, window: currentWindow)
@@ -326,7 +326,7 @@ class WindowSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
                         }
                     } else {
                         for w in self.allWindows {
-                            let thumbnail = WindowThumbnail(image: NSImage.unknowScreen, window: w)
+                            let thumbnail = WindowThumbnail(image: NSImage.unknownScreen, window: w)
                             guard let displays = SCContext.availableContent?.displays.filter({ NSIntersectsRect(w.frame, $0.frame) }) else { break }
                             for d in displays {
                                 DispatchQueue.main.async {

@@ -89,3 +89,19 @@ fastlane/test_output
 
 iOSInjectionProject/
 .DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build and archive artifacts
+archive/
+build/
+logs/
+
+# Development scripts and documentation
+# These files are for local development only and not intended for version control
+scripts/
+*.sh
+*.md (build/ci/cd related - see scripts/ folder)

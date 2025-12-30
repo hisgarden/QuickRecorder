@@ -1,0 +1,214 @@
+#
+#  QuickRecorder XcodeGen Project Configuration
+#  Generated for QuickRecorder macOS screen recording application
+#
+#  To generate the Xcode project:
+#    1. Install XcodeGen: brew install xcodegen
+#    2. Run: xcodegen generate
+#    3. Open: QuickRecorder.xcodeproj
+#
+#  For more info: https://github.com/yonaskolb/XcodeGen
+#
+
+name: QuickRecorder
+
+options:
+  bundleIdPrefix: dev.hisgarden
+  deploymentTarget:
+    macOS: "12.3"
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+  groupSortPosition: top
+  defaultConfig: Debug
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "1.7.0"
+    CURRENT_PROJECT_VERSION: "170"
+    # Code Signing Settings
+    # For notarization: MUST set DEVELOPMENT_TEAM to your Team ID
+    # Find your Team ID in your Developer ID certificate name: Developer ID Application: Name (TEAMID)
+    DEVELOPMENT_TEAM: "NSDC3EDS2G"  # Set to your actual Team ID for signing
+    CODE_SIGN_IDENTITY: "Developer ID Application"  # Use "Developer ID Application" for notarization
+    CODE_SIGNING_REQUIRED: "YES"
+    CODE_SIGNING_ALLOWED: "YES"
+    ENABLE_HARDENED_RUNTIME: "YES"  # Required for notarization
+    OTHER_CODE_SIGN_FLAGS: "--timestamp"  # Add timestamp for notarization
+
+packages:
+  # Swift Package Manager Dependencies
+  AECAudioStream:
+    url: https://github.com/lihaoyun6/AECAudioStream.git
+    revision: 0eab971c1dd0420ee84646c71172dd66fa59117c
+  
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts.git
+    exactVersion: 2.2.4
+  
+  MatrixColorSelector:
+    url: https://github.com/lihaoyun6/MatrixColorSelector.git
+    revision: 0853e68c0c9b205ffe6a963f2a56b26e6ceca51a
+  
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.6.0
+  
+  SwiftLAME:
+    url: https://github.com/hidden-spectrum/SwiftLAME.git
+    revision: e8256a8151594f47f103c742f684253c6c44871d
+
+targets:
+  # =============================================================================
+  # Main Application Target
+  # =============================================================================
+  QuickRecorder:
+    type: application
+    platform: macOS
+    deploymentTarget: "12.3"
+    sources:
+      - path: QuickRecorder
+        excludes:
+          - "**/*.entitlements"
+          - "**/*.plist"
+          - "**/*.lproj"
+          - "**/*.sdef"
+          - "Preview Content"
+        buildPhase: sources
+      - path: QuickRecorder/Info.plist
+        buildPhase: none
+      - path: QuickRecorder/Supports/Scriptable.sdef
+        buildPhase: resources
+      - path: QuickRecorder/Base.lproj
+        buildPhase: resources
+      - path: QuickRecorder/zh-Hans.lproj
+        buildPhase: resources
+      - path: QuickRecorder/zh-Hant.lproj
+        buildPhase: resources
+      - path: QuickRecorder/it.lproj
+        buildPhase: resources
+      - path: QuickRecorder/Preview Content
+        buildPhase: resources
+      - path: QuickRecorder/Assets.xcassets
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_NAME: QuickRecorder
+        PRODUCT_BUNDLE_IDENTIFIER: dev.hisgarden.QuickRecorder
+        INFOPLIST_FILE: QuickRecorder/Info.plist
+        CODE_SIGN_ENTITLEMENTS: QuickRecorder/QuickRecorder.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/../Frameworks"
+        # Disable automatic signing to allow manual code signing with Developer ID
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: YES
+        MACOSX_DEPLOYMENT_TARGET: "12.3"
+        SWIFT_OBJC_BRIDGING_HEADER: ""
+        CLANG_ENABLE_MODULES: YES
+        OTHER_LDFLAGS:
+          - $(inherited)
+        DEFINES_MODULE: YES
+        PRODUCT_MODULE_NAME: QuickRecorder
+        FULL_PROJECT_NAME: "$(PROJECT_NAME)"
+        PROJECT_DIR: "$(SRCROOT)"
+        GENERATE_INFOPLIST_FILE: NO
+        APPLICATION_SCRIPTING_MASK: YES
+        ENABLE_AVF: YES
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
+          GCC_OPTIMIZATION_LEVEL: "0"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS:
+            - DEBUG
+          GCC_PREPROCESSOR_DEFINITIONS:
+            - DEBUG=1
+            - "$(inherited)"
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+          DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
+          GCC_OPTIMIZATION_LEVEL: "s"
+          SWIFT_COMPILATION_MODE: wholemodule
+    entitlements:
+      path: QuickRecorder/QuickRecorder.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.device.audio-input: true
+        com.apple.security.device.camera: true
+        com.apple.security.files.user-selected.read-only: true
+        com.apple.security.network.client: true
+        com.apple.security.automation.apple-events: true
+    dependencies:
+      - package: AECAudioStream
+      - package: KeyboardShortcuts
+      - package: MatrixColorSelector
+      - package: Sparkle
+      - package: SwiftLAME
+    postCompileScripts:
+      - script: |
+          # Sparkle Appcast Generation (if configured)
+          if [ -f "${PODS_ROOT}/Sparkle/bin/sign_update" ]; then
+            echo "Sparkle signing configured"
+          fi
+        name: Post-Compile
+        basedOnDependencyAnalysis: false
+
+  # =============================================================================
+  # Unit Test Target
+  # =============================================================================
+  QuickRecorderTests:
+    type: bundle.unit-test
+    platform: macOS
+    deployment: "12.3"
+    sources:
+      - path: QuickRecorderTests
+    settings:
+      base:
+        PRODUCT_NAME: QuickRecorderTests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.hisgarden.QuickRecorderTests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/QuickRecorder.app/Contents/MacOS/QuickRecorder"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        MACOSX_DEPLOYMENT_TARGET: "12.3"
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_OBJC_BRIDGING_HEADER: ""
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "QuickRecorder Tests"
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+    dependencies:
+      - target: QuickRecorder
+
+schemes:
+  # =============================================================================
+  # Build Schemes
+  # =============================================================================
+  QuickRecorder:
+    build:
+      targets:
+        QuickRecorder: all
+        QuickRecorderTests: [test]
+    run:
+      config: Debug
+      environmentVariables:
+        OS_ACTIVITY_DT_MODE: "YES"
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - name: QuickRecorderTests
+          parallelizable: true
+          randomExecutionOrder: true
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+

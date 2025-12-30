@@ -2,6 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+		<string>it</string>
+	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -44,10 +55,11 @@
 	<true/>
 	<key>OSAScriptingDefinition</key>
 	<string>Scriptable</string>
-	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/hisgarden/QuickRecorder/main/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>dP6zY7RAyK3DtV/dDrQ2V2dB0BY36jADwMKHZIX89u4=</string>
+	<!-- Sparkle Update Feed - Uncomment after publishing appcast.xml to GitHub -->
+	<!-- <key>SUFeedURL</key> -->
+	<!-- <string>https://raw.githubusercontent.com/hisgarden/QuickRecorder/main/appcast.xml</string> -->
+	<!-- <key>SUPublicEDKey</key> -->
+	<!-- <string>dP6zY7RAyK3DtV/dDrQ2V2dB0BY36jADwMKHZIX89u4=</string> -->
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

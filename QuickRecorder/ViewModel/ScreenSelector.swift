@@ -177,7 +177,7 @@ class ScreenSelectorViewModel: NSObject, ObservableObject, SCStreamDelegate, SCS
         if CMSampleBufferGetImageBuffer(sampleBuffer) == nil { return }
         var nsImage = sampleBuffer.nsImage
         if let index = self.streams.firstIndex(of: stream), index + 1 <= self.allScreens.count {
-            if nsImage == nil { nsImage = SCContext.getWallpaper(self.allScreens[index]) ?? NSImage.unknowScreen }
+            if nsImage == nil { nsImage = SCContext.getWallpaper(self.allScreens[index]) ?? NSImage.unknownScreen }
             let currentScreen = self.allScreens[index]
             let thumbnail = ScreenThumbnail(image: nsImage!, screen: currentScreen)
             DispatchQueue.main.async {
