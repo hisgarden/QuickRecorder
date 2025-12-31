@@ -101,7 +101,6 @@ build/
 logs/
 
 # Development scripts and documentation
-# These files are for local development only and not intended for version control
-scripts/
-*.sh
-*.md (build/ci/cd related - see scripts/ folder)
+# Most scripts are tracked, but sensitive ones are excluded below
+scripts/credentials.sh
+scripts/build-settings.txt
