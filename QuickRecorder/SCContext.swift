@@ -106,11 +106,13 @@ class SCContext {
     }
     
     static func getSelf() -> SCRunningApplication? {
-        return SCContext.availableContent!.applications.first(where: { Bundle.main.bundleIdentifier == $0.bundleIdentifier })
+        guard let availableContent = SCContext.availableContent else { return nil }
+        return availableContent.applications.first(where: { Bundle.main.bundleIdentifier == $0.bundleIdentifier })
     }
     
     static func getSelfWindows() -> [SCWindow]? {
-        return SCContext.availableContent!.windows.filter( {
+        guard let availableContent = SCContext.availableContent else { return nil }
+        return availableContent.windows.filter( {
             guard let title = $0.title else { return false }
             return $0.owningApplication?.bundleIdentifier == Bundle.main.bundleIdentifier
             && title != "Mouse Pointer".local
@@ -130,8 +132,9 @@ class SCContext {
     }
     
     static func getWindows(isOnScreen: Bool = true, hideSelf: Bool = true) -> [SCWindow] {
+        guard let availableContent = availableContent else { return [] }
         var windows = [SCWindow]()
-        windows = availableContent!.windows.filter {
+        windows = availableContent.windows.filter {
             guard let app =  $0.owningApplication,
                   let title = $0.title else {//, !title.isEmpty else {
                 return false
@@ -342,7 +345,9 @@ class SCContext {
         if stream != nil { stream.stopCapture() }
         stream = nil
         if ud.bool(forKey: "recordMic") {
-            micInput.markAsFinished()
+            if micInput != nil {
+                micInput.markAsFinished()
+            }
             AudioRecorder.shared.stop()
             audioEngine.inputNode.removeTap(onBus: 0)
             audioEngine.stop()
@@ -350,10 +355,21 @@ class SCContext {
             if ud.bool(forKey: "enableAEC") { try? AECEngine.stopAudioUnit() }
         }
         if streamType != .systemaudio {
+            // Only proceed if vW and vwInput are initialized
+            guard let vW = vW, let vwInput = vwInput else {
+                // Clean up state even if not fully initialized
+                audioFile = nil
+                audioFile2 = nil
+                return
+            }
             let dispatchGroup = DispatchGroup()
             dispatchGroup.enter()
             vwInput.markAsFinished()
-            if #available(macOS 13, *) { awInput.markAsFinished() }
+            if #available(macOS 13, *) {
+                if let awInput = awInput {
+                    awInput.markAsFinished()
+                }
+            }
             vW.finishWriting {
                 if vW.status != .completed {
                     print("Video writing failed with status: \(vW.status), error: \(String(describing: vW.error))")
@@ -361,6 +377,7 @@ class SCContext {
                     showNotification(title: "Failed to save file".local, body: "\(err)", id: "quickrecorder.error.\(UUID().uuidString)")
                 } else {
                     if ud.bool(forKey: "recordMic") && ud.bool(forKey: "recordWinSound") && ud.bool(forKey: "remuxAudio") {
+                        if filePath == nil { return }
                         mixAudioTracks(videoURL: filePath.url) { result in
                             switch result {
                             case .success(let url):
@@ -385,7 +402,9 @@ class SCContext {
             }
             dispatchGroup.wait()
         } else {
-            if ud.bool(forKey: "recordMic") { vW.finishWriting {} }
+            if ud.bool(forKey: "recordMic"), let vW = vW {
+                vW.finishWriting {}
+            }
         }
         
         DispatchQueue.main.async {
@@ -401,9 +420,11 @@ class SCContext {
         audioFile = nil // close audio file
         audioFile2 = nil // close audio file2
         if streamType == .systemaudio {
+            if filePath == nil { return }
             if ud.string(forKey: "audioFormat") == AudioFormat.mp3.rawValue && !ud.bool(forKey: "recordMic") {
                 Task {
                     let outPutUrl = (String(filePath.dropLast(4)) + ".mp3").url
+                    if filePath1 == nil { return }
                     do {
                         try await m4a2mp3(inputUrl: filePath1.url, outputUrl: outPutUrl)
                         try? fd.removeItem(atPath: filePath1)
@@ -421,6 +442,7 @@ class SCContext {
                 }
             } else {
                 if ud.bool(forKey: "remuxAudio") && ud.bool(forKey: "recordMic") {
+                    if filePath == nil { return }
                     let fileURL = filePath.url
                     let document = try? qmaPackageHandle.load(from: fileURL)
                     if let document = document {
@@ -434,6 +456,7 @@ class SCContext {
                         audioPlayerManager.saveFile(saveURL, saveAsMP3: exportMP3)
                     }
                 } else {
+                    if filePath == nil { return }
                     if !ud.bool(forKey: "showPreview") {
                         let title = "Recording Completed".local
                         let body = String(format: "File saved to: %@".local, filePath)
@@ -460,6 +483,10 @@ class SCContext {
                     streamType = nil
                     return
                 }
+            }
+            if filePath == nil {
+                streamType = nil
+                return
             }
             if !ud.bool(forKey: "showPreview") {
                 let title = "Recording Completed".local
