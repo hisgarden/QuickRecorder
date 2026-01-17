@@ -41,13 +41,13 @@ var updaterController: SPUStandardUpdaterController!
 struct QuickRecorderApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     //private let updaterController: SPUStandardUpdaterController
-        
+
     init() {
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
         updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     }
-    
+
     var body: some Scene {
         DocumentGroup(newDocument: qmaPackageHandle()) { file in
             //if SCContext.stream == nil {
@@ -65,7 +65,7 @@ struct QuickRecorderApp: App {
             CommandGroup(replacing: .newItem) {}
             CommandGroup(replacing: .textEditing) {}
         }
-        
+
         Settings {
             SettingsView()
                 .background(
@@ -113,7 +113,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     var isResizing = false
     var presenterType = "OFF"
     var frameQueue = FixedLengthArray<CMTime>(maxLength: 20)
-    
+
     @AppStorage("showOnDock")       var showOnDock: Bool = true
     @AppStorage("showMenubar")      var showMenubar: Bool = false
     @AppStorage("enableAEC")        var enableAEC: Bool = false
@@ -146,7 +146,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     @AppStorage("audioQuality")     var audioQuality: AudioQuality = .high
     @AppStorage("pixelFormat")      var pixelFormat: PixFormat = .delault
     @AppStorage("hideCCenter")      var hideCCenter: Bool = false
-    
+
     func mousePointerReLocation(event: NSEvent) {
         if event.type == .scrollWheel { return }
         if !highlightMouse || hideMousePointer || SCContext.stream == nil || SCContext.streamType == .window {
@@ -160,7 +160,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         mousePointer.setFrameOrigin(windowFrame.origin)
         mousePointer.orderFront(nil)
     }
-    
+
     func screenMagnifierReLocation(event: NSEvent) {
         if !SCContext.isMagnifierEnabled || hideScreenMagnifier { screenMagnifier.orderOut(nil); return }
         let mouseLocation = event.locationInWindow
@@ -173,23 +173,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         screenMagnifier.setFrameOrigin(windowFrame.origin)
         screenMagnifier.orderFront(nil)
     }
-    
+
     func registerGlobalMouseMonitor() {
         mouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.scrollWheel, .mouseMoved, .rightMouseUp, .rightMouseDown, .rightMouseDragged, .leftMouseUp,  .leftMouseDown, .leftMouseDragged, .otherMouseUp, .otherMouseDown, .otherMouseDragged]) { event in
             self.mousePointerReLocation(event: event)
             self.screenMagnifierReLocation(event: event)
         }
     }
-        
+
     func stopGlobalMouseMonitor() {
         mousePointer.orderOut(nil)
         if let monitor = mouseMonitor { NSEvent.removeMonitor(monitor); mouseMonitor = nil }
     }
-    
+
     func applicationWillTerminate(_ aNotification: Notification) {
         if SCContext.stream != nil { SCContext.stopRecording() }
     }
-    
+
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
             if SCContext.trimingList.contains(url) { continue }
@@ -197,10 +197,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
             closeMainWindow()
         }
     }
-    
+
     func applicationWillFinishLaunching(_ notification: Notification) {
-        scPerm = SCContext.updateAvailableContentSync() != nil
-        
+        // IMPROVED: Use async permission checking to avoid blocking and enable auto-restart
+        SCContext.checkPermissionsAsync { hasPermission in
+            scPerm = hasPermission
+            if hasPermission {
+                print("Screen recording permission granted".local)
+            } else {
+                print("Screen recording permission denied or pending".local)
+            }
+        }
+
         let process = NSWorkspace.shared.runningApplications.filter({ $0.bundleIdentifier == "dev.hisgarden.QuickRecorder" })
         if process.count > 1 {
             DispatchQueue.main.async {
@@ -208,9 +216,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
                 if button == .alertFirstButtonReturn { NSApp.terminate(self) }
             }
         }
-        
+
         lazy var userDesktop = (NSSearchPathForDirectoriesInDomains(.desktopDirectory, .userDomainMask, true) as [String]).first!
-        
+
         ud.register( // default defaults (used if not set)
             defaults: [
                 "audioFormat": AudioFormat.aac.rawValue,
@@ -243,7 +251,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
                 "savedArea": [String: [String: CGFloat]]()
             ]
         )
-        
+
         if highRes == 0 { highRes = 2 }
         // Set activation policy only once to prevent multiple dock icons
         struct ActivationPolicySet { static var isSet = false }
@@ -252,7 +260,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
             NSApp.setActivationPolicy(.regular)
         }
         if isMacOS12 { showPreview = false; remuxAudio = false }
-        
+
         // Request notification permissions on main thread to avoid crashes on macOS
         // Skip during test execution to avoid XCTest sandbox issues
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
@@ -262,7 +270,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
                 }
             }
         }
-        
+
         var allow : UInt32 = 1
         let dataSize : UInt32 = 4
         let zero : UInt32 = 0
@@ -280,32 +288,32 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         mousePointer.ignoresMouseEvents = true
         mousePointer.isReleasedWhenClosed = false
         mousePointer.backgroundColor = NSColor.clear
-        
+
         screenMagnifier.title = "Screen Magnifier".local
         screenMagnifier.level = .floating
         screenMagnifier.ignoresMouseEvents = true
         screenMagnifier.isReleasedWhenClosed = false
         screenMagnifier.backgroundColor = NSColor.clear
-        
+
         camWindow.title = "Camera Overlayer".local
         camWindow.level = .floating
         camWindow.isReleasedWhenClosed = false
         camWindow.isMovableByWindowBackground = true
         camWindow.backgroundColor = NSColor.clear
         camWindow.collectionBehavior = [.canJoinAllSpaces]
-        
+
         countdownPanel.title = "Countdown Panel".local
         countdownPanel.level = .floating
         countdownPanel.isReleasedWhenClosed = false
         countdownPanel.isMovableByWindowBackground = false
         countdownPanel.backgroundColor = NSColor.clear
-        
+
         deviceWindow.title = "iDevice Overlayer".local
         deviceWindow.level = .floating
         deviceWindow.isReleasedWhenClosed = false
         deviceWindow.isMovableByWindowBackground = true
         deviceWindow.backgroundColor = NSColor.clear
-        
+
         controlPanel.title = "Recording Controller".local
         controlPanel.level = .floating
         controlPanel.titleVisibility = .hidden
@@ -313,13 +321,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         controlPanel.isReleasedWhenClosed = false
         controlPanel.titlebarAppearsTransparent = true
         controlPanel.isMovableByWindowBackground = true
-        
+
         previewWindow.level = .statusBar
         previewWindow.titlebarAppearsTransparent = true
         previewWindow.titleVisibility = .hidden
         previewWindow.isReleasedWhenClosed = false
         previewWindow.backgroundColor = .clear
-        
+
         KeyboardShortcuts.onKeyDown(for: .showPanel) {
             _ = self.applicationShouldHandleReopen(NSApp, hasVisibleWindows: true)
             if SCContext.stream == nil { NSApp.activate(ignoringOtherApps: true) }
@@ -355,7 +363,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         }
         updateStatusBar()
     }
-    
+
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         closeAllWindow()
         if showOnDock { _ = applicationShouldHandleReopen(NSApp, hasVisibleWindows: true) }
@@ -364,7 +372,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
             ud.setValue(Encoder.h265.rawValue, forKey: "encoder")
         }
     }
-    
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if SCContext.stream == nil {
             let w1 = NSApp.windows.filter({ !$0.title.contains("Item-0") && !$0.title.isEmpty && $0.isVisible })
@@ -395,7 +403,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         }
         return false
     }
-    
+
     func openSettingPanel() {
         NSApp.activate(ignoringOtherApps: true)
         if #available(macOS 14, *) {
@@ -406,7 +414,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
             NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
     }
-    
+
     class EscPanel: NSPanel {
         override func cancelOperation(_ sender: Any?) {
             self.close()
@@ -433,7 +441,7 @@ func closeAllWindow(except: String = "") {
 func findNSSplitVIew(view: NSView?) -> NSSplitView? {
     var queue = [NSView]()
     if let root = view { queue.append(root) }
-    
+
     while !queue.isEmpty {
         let current = queue.removeFirst()
         if current is NSSplitView { return current as? NSSplitView }
@@ -459,27 +467,27 @@ func process(path: String, arguments: [String]) -> String? {
     task.launchPath = path
     task.arguments = arguments
     task.standardError = Pipe()
-    
+
     let outputPipe = Pipe()
     defer {
         outputPipe.fileHandleForReading.closeFile()
     }
     task.standardOutput = outputPipe
-    
+
     do {
         try task.run()
     } catch let error {
         print("\(error.localizedDescription)")
         return nil
     }
-    
+
     let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
     let output = String(decoding: outputData, as: UTF8.self)
-    
+
     if output.isEmpty {
         return nil
     }
-    
+
     return output.trimmingCharacters(in: .newlines)
 }
 
@@ -487,7 +495,7 @@ func tips(_ message: String, title: String? = nil, id: String, buttonTitle: Stri
     // Prevent showing multiple tips dialogs at the same time
     struct TipShown { static var currentTipId: String? = nil }
     if TipShown.currentTipId == id { return }
-    
+
     let never = (ud.object(forKey: "neverRemindMe") as? [String]) ?? []
     if !never.contains(id) {
         TipShown.currentTipId = id
@@ -520,13 +528,13 @@ func createAlert(level: NSAlert.Style = .warning, title: String, message: String
 func showAlertSyncOnMainThread(level: NSAlert.Style = .warning, title: String, message: String, button1: String, button2: String = "", width: Int? = nil) -> NSApplication.ModalResponse {
     var response: NSApplication.ModalResponse = .abort
     let semaphore = DispatchSemaphore(value: 0)
-    
+
     DispatchQueue.main.async {
         let alert = createAlert(level: level, title: title, message: message, button1: button1, button2: button2, width: width)
         response = alert.runModal()
         semaphore.signal()
     }
-    
+
     semaphore.wait()
     return response
 }
@@ -574,7 +582,7 @@ extension NSImage {
         image.unlockFocus()
         return image
     }
-    
+
     static func createScreenShot() -> NSImage? {
         let excludedAppBundleIDs = ["dev.hisgarden.QuickRecorder"]
         var exclusionPIDs = [Int]()
@@ -583,7 +591,7 @@ extension NSImage {
                 exclusionPIDs.append(Int(app.processIdentifier))
             }
         }
-        
+
         let windowDescriptions = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
         var windowIDs = [CGWindowID]()
         for windowDict in windowDescriptions {
@@ -604,7 +612,7 @@ extension NSImage {
         let factor = SCContext.getScreenWithMouse()?.backingScaleFactor ?? 1.0
         return NSImage(cgImage: imageRef, size: NSSize(width: CGFloat(imageRef.width)/factor, height: CGFloat(imageRef.height)/factor))
     }
-    
+
     func saveToFile(_ url: URL, type: NSBitmapImageRep.FileType = .png) {
         if let tiffData = self.tiffRepresentation,
            let imageRep = NSBitmapImageRep(data: tiffData) {
@@ -616,7 +624,7 @@ extension NSImage {
             }
         }
     }
-    
+
     func trim(rect: CGRect) -> NSImage {
         let result = NSImage(size: rect.size)
         result.lockFocus()
