@@ -34,11 +34,9 @@ This document serves as the official Software Bill of Materials for QuickRecorde
 |---------|---------|------------|---------|---------|
 | **AECAudioStream** | main (0eab971c1dd0420ee84646c71172dd66fa59117c) | https://github.com/lihaoyun6/AECAudioStream.git | MIT | Acoustic Echo Cancellation for audio recording |
 | **KeyboardShortcuts** | 2.2.4 (7ecc38bb6edf7d087d30e737057b8d8a9b7f51eb) | https://github.com/sindresorhus/KeyboardShortcuts.git | MIT | Global keyboard shortcut handling |
-| **MatrixColorSelector** | main (0853e68c0c9b205ffe6a963f2a56b26e6ceca51a) | https://github.com/lihaoyun6/MatrixColorSelector.git | MIT | Color selection UI component |
 | **Sparkle** | 2.6.0 (0a4caaf7a81eea2cece651ef4b17331fa0634dff) | https://github.com/sparkle-project/Sparkle | MIT | Software update framework |
-| **SwiftLAME** | e8256a8151594f47f103c742f684253c6c44871d | https://github.com/hidden-spectrum/SwiftLAME.git | MIT | MP3 encoding support |
 
-### Total SPM Dependencies: 5
+### Total SPM Dependencies: 3
 
 ---
 
@@ -74,12 +72,8 @@ QuickRecorder (Main Target)
 │   └── AVFoundation (System)
 ├── KeyboardShortcuts (SPM)
 │   └── SwiftUI (System)
-├── MatrixColorSelector (SPM)
-│   └── SwiftUI (System)
-├── Sparkle (SPM)
-│   └── AppKit (System)
-└── SwiftLAME (SPM)
-    └── AVFoundation (System)
+└── Sparkle (SPM)
+    └── AppKit (System)
 
 QuickRecorderTests (Test Target)
 ├── XCTest (System)
@@ -97,8 +91,8 @@ QuickRecorderTests (Test Target)
 | Dependency | Notes |
 |------------|-------|
 | **Sparkle** | Uses secure HTTPS for updates; verify signatures |
-| **SwiftLAME** | Handles audio encoding; ensure safe input sources |
 | **KeyboardShortcuts** | Uses secure input monitoring APIs |
+| **AECAudioStream** | Handles audio processing; uses system audio APIs securely |
 
 ---
 
@@ -211,4 +205,12 @@ The SBOM can be exported in JSON format:
 - [CycloneDX Specification](https://cyclonedx.org/specification/)
 - [Swift Package Manager](https://swift.org/package-manager/)
 - [QuickRecorder GitHub](https://github.com/hisgarden/QuickRecorder)
+
+
+
+
+
+
+
+
 

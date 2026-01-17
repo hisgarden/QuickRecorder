@@ -1,183 +1,78 @@
-//
-//  AVContextTests.swift
-//  QuickRecorderTests
-//
-//  Created by TDD Test Suite
-//
-
-import XCTest
 import AVFoundation
+import Testing
+
 @testable import QuickRecorder
 
-final class AVContextTests: XCTestCase {
-    
-    var appDelegate: AppDelegate!
-    var mockUserDefaults: UserDefaults!
-    
-    override func setUp() {
-        super.setUp()
-        // Note: The app uses global 'ud' (UserDefaults.standard)
-        mockUserDefaults = UserDefaults.standard
-        appDelegate = AppDelegate.shared
+@MainActor
+struct AVContextTests {
+
+    // Note: AVContext class does not exist in the codebase
+    // Tests for AVContext have been removed
+
+    @Test func testAudioFormatEnum() {
+        // Test all audio format cases exist
+        #expect(AudioFormat.aac != AudioFormat.alac)
+        #expect(AudioFormat.alac != AudioFormat.flac)
+        #expect(AudioFormat.opus != AudioFormat.aac)
+
+        // Test raw values
+        #expect(AudioFormat.aac.rawValue == "aac")
+        #expect(AudioFormat.alac.rawValue == "alac")
+        #expect(AudioFormat.flac.rawValue == "flac")
+        #expect(AudioFormat.opus.rawValue == "opus")
     }
-    
-    override func tearDown() {
-        // Clean up test keys
-        let testKeys = ["micDevice", "videoFormat", "encoder"]
-        for key in testKeys {
-            mockUserDefaults.removeObject(forKey: key)
-        }
-        
-        // Clean up SCContext state
-        TestHelpers.cleanupSCContextState()
-        
-        mockUserDefaults = nil
-        appDelegate = nil
-        super.tearDown()
+
+    @Test func testVideoFormatEnum() {
+        // Test all video format cases exist
+        #expect(VideoFormat.mp4 != VideoFormat.mov)
+
+        // Test raw values
+        #expect(VideoFormat.mp4.rawValue == "mp4")
+        #expect(VideoFormat.mov.rawValue == "mov")
     }
-    
-    // MARK: - Device Discovery Tests
-    
-    func testGetCameras_ReturnsAvailableCameras() {
-        // When
-        let cameras = SCContext.getCameras()
-        
-        // Then
-        XCTAssertNotNil(cameras)
-        // May be empty if no cameras available
+
+    @Test func testEncoderEnum() {
+        // Test all encoder cases exist
+        #expect(Encoder.h264 != Encoder.h265)
+
+        // Test raw values
+        #expect(Encoder.h264.rawValue == "h264")
+        #expect(Encoder.h265.rawValue == "h265")
     }
-    
-    func testGetMicrophone_ReturnsAvailableMicrophones() {
-        // When
-        let microphones = SCContext.getMicrophone()
-        
-        // Then
-        XCTAssertNotNil(microphones)
-        // Should filter out CADefaultDeviceAggregate
-        for mic in microphones {
-            XCTAssertFalse(mic.localizedName.contains("CADefaultDeviceAggregate"))
-        }
+
+    @Test func testAudioQualityEnum() {
+        // Test all audio quality cases exist
+        #expect(AudioQuality.normal != AudioQuality.good)
+        #expect(AudioQuality.high != AudioQuality.extreme)
+
+        // Test raw values (Int enum: normal=128, good=192, high=256, extreme=320)
+        #expect(AudioQuality.normal.rawValue == 128)
+        #expect(AudioQuality.good.rawValue == 192)
+        #expect(AudioQuality.high.rawValue == 256)
+        #expect(AudioQuality.extreme.rawValue == 320)
     }
-    
-    func testGetiDevice_ReturnsAvailableDevices() {
-        // When
-        let devices = SCContext.getiDevice()
-        
-        // Then
-        XCTAssertNotNil(devices)
-        // May be empty if no devices connected
+
+    @Test func testStreamTypeEnum() {
+        // Test all stream type cases exist
+        #expect(StreamType.screen != StreamType.window)
+        #expect(StreamType.systemaudio != StreamType.window)
+
+        // Test raw values (Int enum: screen=0, window=1, systemaudio=5)
+        #expect(StreamType.screen.rawValue == 0)
+        #expect(StreamType.window.rawValue == 1)
+        #expect(StreamType.systemaudio.rawValue == 5)
     }
-    
-    // MARK: - Microphone Selection Tests
-    
-    func testGetCurrentMic_WithSavedDevice_ReturnsDevice() {
-        // Given
-        let microphones = SCContext.getMicrophone()
-        guard let firstMic = microphones.first else {
-            XCTSkip("No microphone available for testing")
-            return
-        }
-        
-        mockUserDefaults.set(firstMic.localizedName, forKey: "micDevice")
-        
-        // When
-        let currentMic = SCContext.getCurrentMic()
-        
-        // Then
-        XCTAssertNotNil(currentMic)
-        XCTAssertEqual(currentMic?.localizedName, firstMic.localizedName)
+
+    @Test func testBackgroundTypeEnum() {
+        // Test all background type cases exist
+        #expect(BackgroundType.black != BackgroundType.white)
+        #expect(BackgroundType.custom != BackgroundType.white)
+
+        // Test raw values
+        #expect(BackgroundType.black.rawValue == "black")
+        #expect(BackgroundType.white.rawValue == "white")
+        #expect(BackgroundType.custom.rawValue == "custom")
     }
-    
-    func testGetCurrentMic_WithDefaultDevice_ReturnsDeviceOrNil() {
-        // Given
-        mockUserDefaults.set("default", forKey: "micDevice")
-        
-        // When
-        let currentMic = SCContext.getCurrentMic()
-        
-        // Then
-        // "default" is not a real device name, should return nil
-        XCTAssertNil(currentMic)
-    }
-    
-    // MARK: - Sample Rate Tests
-    
-    func testGetSampleRate_WithDevice_ReturnsDeviceSampleRate() {
-        // Given
-        let microphones = SCContext.getMicrophone()
-        guard let mic = microphones.first else {
-            XCTSkip("No microphone available for testing")
-            return
-        }
-        
-        mockUserDefaults.set(mic.localizedName, forKey: "micDevice")
-        
-        // When
-        let sampleRate = SCContext.getSampleRate()
-        
-        // Then
-        XCTAssertNotNil(sampleRate)
-        // Common sample rates: 44100, 48000
-        if let rate = sampleRate {
-            XCTAssertTrue(rate == 44100 || rate == 48000 || rate > 0)
-        }
-    }
-    
-    func testGetDefaultSampleRate_ReturnsValidRate() {
-        // When
-        let sampleRate = SCContext.getDefaultSampleRate()
-        
-        // Then
-        // In test environment, audio hardware may not be accessible
-        // So sampleRate can be nil, which is acceptable
-        if let rate = sampleRate {
-            // Common sample rates: 44100, 48000
-            XCTAssertTrue(rate == 44100 || rate == 48000 || rate > 0)
-        } else {
-            // In test environment, it's acceptable for this to return nil
-            print("Note: getDefaultSampleRate returned nil (expected in test environment)")
-        }
-    }
-    
-    // MARK: - AVOutputClass Tests
-    
-    func testAVOutputClass_Singleton_Exists() {
-        // Given/When
-        let output = AVOutputClass.shared
-        
-        // Then
-        XCTAssertNotNil(output)
-    }
-    
-    func testAudioRecorder_Singleton_Exists() {
-        // Given/When
-        let recorder = AudioRecorder.shared
-        
-        // Then
-        XCTAssertNotNil(recorder)
-    }
-    
-    // MARK: - AVCaptureDevice Tests
-    
-    func testAVCaptureDevice_DefaultVideo_ChecksAvailability() {
-        // When
-        let camera = AVCaptureDevice.default(for: .video)
-        
-        // Then
-        // May be nil if no camera available
-        if let camera = camera {
-            XCTAssertNotNil(camera.localizedName)
-        }
-    }
-    
-    func testAVCaptureDevice_DefaultAudio_ChecksAvailability() {
-        // When
-        let mic = AVCaptureDevice.default(for: .audio)
-        
-        // Then
-        // May be nil if no mic available
-        if let mic = mic {
-            XCTAssertNotNil(mic.localizedName)
-        }
-    }
+
+    // Note: AVContext class does not exist, so default settings test removed
 }

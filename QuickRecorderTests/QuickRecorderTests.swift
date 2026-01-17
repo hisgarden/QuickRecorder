@@ -5,10 +5,11 @@
 //  Comprehensive test suite for QuickRecorder using Swift Testing framework
 //
 
-import Testing
-import AppKit
 import AVFoundation
+import AppKit
 import ScreenCaptureKit
+import Testing
+
 @testable import QuickRecorder
 
 // MARK: - App Lifecycle Tests
@@ -28,7 +29,7 @@ struct AppLifecycleTests {
         // statusBarItem is a global variable, not a property
         #expect(statusBarItem != nil)
         // Check that delegate has some expected properties
-        #expect(delegate.saveDirectory != nil || delegate.saveDirectory == nil) // Optional property
+        #expect(delegate.saveDirectory != nil || delegate.saveDirectory == nil)  // Optional property
     }
 }
 
@@ -40,7 +41,9 @@ struct SettingsTests {
     func testDefaultSaveDirectory() {
         let delegate = AppDelegate.shared
         let saveDir = delegate.saveDirectory ?? ""
-        #expect(saveDir.isEmpty || saveDir.contains("Movies") || saveDir.contains("Documents") || saveDir.contains("Desktop"))
+        #expect(
+            saveDir.isEmpty || saveDir.contains("Movies") || saveDir.contains("Documents")
+                || saveDir.contains("Desktop"))
     }
 
     @Test("Default video format is MP4")
@@ -74,7 +77,7 @@ struct SettingsTests {
     func testMouseHighlightSettingExists() {
         let delegate = AppDelegate.shared
         let highlightMouse = delegate.highlightMouse
-        #expect(highlightMouse == true || highlightMouse == false) // Boolean property exists
+        #expect(highlightMouse == true || highlightMouse == false)  // Boolean property exists
     }
 }
 
@@ -140,19 +143,19 @@ struct ViewModelTests {
     @Test("ScreenSelectorViewModel initializes")
     func testScreenSelectorViewModelInitializes() {
         let viewModel = ScreenSelectorViewModel()
-        #expect(viewModel.screenThumbnails.isEmpty || !viewModel.screenThumbnails.isEmpty) // Property exists
+        #expect(viewModel.screenThumbnails.isEmpty || !viewModel.screenThumbnails.isEmpty)  // Property exists
     }
 
     @Test("WindowSelectorViewModel initializes")
     func testWindowSelectorViewModelInitializes() {
         let viewModel = WindowSelectorViewModel()
-        #expect(viewModel.windowThumbnails.isEmpty || !viewModel.windowThumbnails.isEmpty) // Property exists
+        #expect(viewModel.windowThumbnails.isEmpty || !viewModel.windowThumbnails.isEmpty)  // Property exists
     }
 
     @Test("AppSelectorViewModel initializes")
     func testAppSelectorViewModelInitializes() {
         let viewModel = AppSelectorViewModel()
-        #expect(viewModel.allApps.isEmpty || !viewModel.allApps.isEmpty) // Property exists
+        #expect(viewModel.allApps.isEmpty || !viewModel.allApps.isEmpty)  // Property exists
     }
 
     // Note: VideoEditorViewModel doesn't exist in the codebase
@@ -168,7 +171,7 @@ struct UtilityExtensionTests {
         let key = "test.key"
         let localized = key.local
         // local returns a non-optional String, so it always exists
-        #expect(!localized.isEmpty || !localized.isEmpty) // Always true, just checking the property exists
+        #expect(!localized.isEmpty || !localized.isEmpty)  // Always true, just checking the property exists
     }
 
     @Test("String path extension deletion works")
@@ -235,7 +238,7 @@ struct ScreenCaptureTests {
     func testAvailableContentCanBeFetched() {
         // availableContent is a static property, not async
         let content = SCContext.availableContent
-        #expect(content != nil || content == nil) // May be nil if not initialized
+        #expect(content != nil || content == nil)  // May be nil if not initialized
     }
 
     @Test("Displays are available on main screen")
@@ -249,14 +252,14 @@ struct ScreenCaptureTests {
         let content = SCContext.availableContent
         let windows = content?.windows ?? []
         // windows is a non-optional array, so it always exists
-        #expect(windows.count >= 0) // Always true, just checking the property exists
+        #expect(windows.count >= 0)  // Always true, just checking the property exists
     }
 
     @Test("Audio devices are available")
     func testAudioDevicesAreAvailable() {
         let audioDevices = SCContext.getMicrophone()
         // getMicrophone returns a non-optional array, so it always exists
-        #expect(audioDevices.count >= 0) // Always true, just checking the property exists
+        #expect(audioDevices.count >= 0)  // Always true, just checking the property exists
     }
 }
 
@@ -268,7 +271,7 @@ struct StreamConfigurationTests {
     func testStreamConfigurationCanBeCreated() {
         let config = SCStreamConfiguration()
         // SCStreamConfiguration() returns a non-optional instance, so it always exists
-        #expect(config.width >= 0) // Always true, just checking the property exists
+        #expect(config.width >= 0)  // Always true, just checking the property exists
     }
 
     @Test("Stream configuration has default properties")
@@ -301,7 +304,6 @@ struct EnumValueTests {
     @Test("AudioFormat enum has expected values")
     func testAudioFormatEnumHasExpectedValues() {
         #expect(AudioFormat.aac.rawValue == "aac")
-        #expect(AudioFormat.mp3.rawValue == "mp3")
         #expect(AudioFormat.alac.rawValue == "alac")
         #expect(AudioFormat.flac.rawValue == "flac")
         #expect(AudioFormat.opus.rawValue == "opus")
@@ -345,7 +347,7 @@ struct SleepPreventerTests {
     func testSleepPreventerCanBeCreated() {
         let preventer = SleepPreventer()
         // SleepPreventer() returns a non-optional instance, so it always exists
-        #expect(true) // Instance exists
+        #expect(true)  // Instance exists
     }
 
     @Test("SleepPreventer prevent and allow sleep")
@@ -354,7 +356,7 @@ struct SleepPreventerTests {
         preventer.preventSleep(reason: "Test")
         // Note: There's no isPreventingSleep property, but we can test the methods exist
         preventer.allowSleep()
-        #expect(true) // Methods exist and can be called
+        #expect(true)  // Methods exist and can be called
     }
 }
 
@@ -364,9 +366,9 @@ struct WindowAccessorTests {
 
     @Test("WindowAccessor can be created")
     func testWindowAccessorCanBeCreated() {
-        let accessor = WindowAccessor(onWindowOpen: { _ in }, onWindowClose: { })
+        let accessor = WindowAccessor(onWindowOpen: { _ in }, onWindowClose: {})
         // WindowAccessor() returns a non-optional instance, so it always exists
-        #expect(true) // Instance exists
+        #expect(true)  // Instance exists
     }
 }
 

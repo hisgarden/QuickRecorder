@@ -13,9 +13,7 @@ Main SBOM validation tests:
 |------|---------|--------|
 | `testSPMDependencies_AECAudioStream_Exists` | Verifies AECAudioStream import | ✅ |
 | `testSPMDependencies_KeyboardShortcuts_Exists` | Verifies KeyboardShortcuts import | ✅ |
-| `testSPMDependencies_MatrixColorSelector_Exists` | Verifies MatrixColorSelector import | ✅ |
 | `testSPMDependencies_Sparkle_Exists` | Verifies Sparkle import | ✅ |
-| `testSPMDependencies_SwiftLAME_Exists` | Verifies SwiftLAME import | ✅ |
 | `testSystemFrameworks_AppKit_Available` | Tests AppKit availability | ✅ |
 | `testSystemFrameworks_SwiftUI_Available` | Tests SwiftUI availability | ✅ |
 | `testSystemFrameworks_AVFoundation_Available` | Tests AVFoundation availability | ✅ |
@@ -75,7 +73,7 @@ Standards compliance:
 | `testCompliance_LicenseIdentifiers` | SPDX license format |
 | `testCompliance_UniqueIdentifiers` | Unique component IDs |
 
-## Total Test Count: 35+ tests
+## Total Test Count: 32+ tests
 
 ## Running SBOM Tests
 
@@ -99,12 +97,10 @@ xcodebuild test -scheme QuickRecorder -enableCodeCoverage YES
 
 ## Expected Results
 
-### SPM Dependencies (5)
+### SPM Dependencies (3)
 - ✅ AECAudioStream
 - ✅ KeyboardShortcuts
-- ✅ MatrixColorSelector
 - ✅ Sparkle
-- ✅ SwiftLAME
 
 ### System Frameworks (13)
 - ✅ AppKit
@@ -168,4 +164,12 @@ The SBOM test suite validates compliance with:
 - **Full SBOM**: See `SBOM.md`
 - **Test Details**: See `SBOMTests.swift`
 - **Reference**: https://spdx.github.io/spdx-spec/
+
+
+
+
+
+
+
+
 
