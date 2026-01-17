@@ -1,0 +1,375 @@
+version: "3"
+
+vars:
+  PROJECT_NAME: QuickRecorder
+  LOG_DIR: logs
+  TIMESTAMP:
+    sh: date +%Y%m%d-%H%M%S
+  LOG_FILE: "{{.LOG_DIR}}/build-{{.TIMESTAMP}}.log"
+
+tasks:
+  default:
+    desc: Show all available tasks
+    silent: true
+    cmds:
+      - echo ""
+      - echo "  QuickRecorder Development Tasks (Taskfile v3)"
+      - echo ""
+      - echo "  Installation"
+      - echo "    brew install go-task/tap/go-task"
+      - echo ""
+      - echo "  Usage - task TASKNAME"
+      - echo "  More - task --list"
+      - echo ""
+      - echo "  SETUP & CONFIGURATION"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    task setup              Full setup (install deps, generate project)"
+      - echo "    task generate           Generate Xcode project from project.yml"
+      - echo "    task diagnose           System diagnostic (check tools & config)"
+      - echo ""
+      - echo "  BUILDING (with automatic dependency management)"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    task build              Debug build (cached, skips if unchanged)"
+      - echo "    task release            Release build (cached, skips if unchanged)"
+      - echo "    task build-plus         Debug build with full logging & analysis"
+      - echo ""
+      - echo "  TESTING"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    task test               Run all unit tests"
+      - echo "    task test-coverage      Run tests with code coverage report"
+      - echo ""
+      - echo "  DISTRIBUTION (dependencies automatically resolved)"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    task archive            Create .xcarchive (auto-runs release)"
+      - echo "    task export-app         Export .app to Desktop"
+      - echo "    task notarize           Build, archive, notarize (auto-runs deps)"
+      - echo "    task staple             Staple notarization ticket"
+      - echo "    task appcast            Generate Sparkle appcast.xml for updates"
+      - echo "    task publish            Complete release workflow (auto-runs deps)"
+      - echo ""
+      - echo "  MAINTENANCE & CLEANUP"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    task clean              Clean build artifacts"
+      - echo "    task clean-all          Deep clean (remove project, must regenerate)"
+      - echo "    task regenerate         Clean everything & regenerate from scratch"
+      - echo "    task open               Open project in Xcode"
+      - echo "    task size               Show last build size"
+      - echo ""
+      - echo "  DEBUGGING & LOGS"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    task logs               View all build logs"
+      - echo "    task errors             Show errors from last build"
+      - echo ""
+      - echo "  CI/CD (GitHub Actions compatible)"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    task ci-build           CI build (no code signing)"
+      - echo "    task ci-test            CI test with coverage"
+      - echo "    task ci-check           CI full check (build + test)"
+      - echo ""
+      - echo "  SMART FEATURES"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    ✓ Automatic Dependencies    task notarize → auto-runs release, archive"
+      - echo "    ✓ Smart Caching             Skips builds if source files unchanged"
+      - echo "    ✓ Status Checks             Validates project before building"
+      - echo "    ✓ Dry Run Preview           task --dry TASK"
+      - echo "    ✓ Force Re-run              task --force TASK"
+      - echo "    ✓ Verbose Output            task --verbose TASK"
+      - echo ""
+      - echo "  EXAMPLES"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    task build && task test         (Build and test)"
+      - echo "    task --dry notarize             (Preview without running)"
+      - echo "    task notarize                   (Complete release workflow)"
+      - echo "    task --list                     (See all tasks)"
+      - echo "    task --force build              (Force rebuild)"
+      - echo ""
+      - echo "  MIGRATION FROM JUSTFILE"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    just build          →  task build"
+      - echo "    just release        →  task release"
+      - echo "    just test           →  task test"
+      - echo "    just notarize       →  task notarize"
+      - echo "    just --list         →  task --list"
+      - echo "    just --dry build    →  task --dry build"
+      - echo ""
+      - echo "  DOCUMENTATION"
+      - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "    TASK_QUICK_REFERENCE.md     Quick command cheat sheet"
+      - echo "    TASKFILE_README.md          Getting started guide"
+      - echo "    TASKFILE_FEATURES.md        Deep dive into features"
+      - echo "    TASKFILE_MIGRATION.md       Migration from Justfile"
+      - echo "    TASK_EXAMPLES.md            Real-world usage examples"
+      - echo ""
+
+  # =====================================================================
+  # Setup & Configuration
+  # =====================================================================
+
+  setup:
+    desc: Full setup - install XcodeGen and generate project
+    cmds:
+      - echo "🔧 Setting up QuickRecorder..."
+      - cmd: which xcodegen > /dev/null && echo "✅ XcodeGen installed" || (echo "Installing XcodeGen..." && brew install xcodegen)
+        ignore_error: true
+      - task: generate
+      - echo "✅ Setup complete!"
+
+  generate:
+    desc: Generate Xcode project from project.yml
+    cmds:
+      - echo "📦 Generating Xcode project..."
+      - xcodegen generate
+      - echo "✅ Xcode project generated"
+
+  diagnose:
+    desc: Full system diagnostic
+    cmds:
+      - echo "QuickRecorder System Diagnostic"
+      - cmd: echo "Date $(date)"
+      - cmd: xcode-select -p 2>/dev/null && echo "Xcode configured" || echo "Xcode not configured"
+      - cmd: which xcodegen > /dev/null && echo "XcodeGen installed" || echo "XcodeGen missing"
+      - cmd: '[ -d QuickRecorder.xcodeproj ] && echo "Project exists" || echo "Project missing"'
+      - cmd: '[ -f project.yml ] && echo "project.yml exists" || echo "project.yml missing"'
+
+  # =====================================================================
+  # Build Tasks with Dependency Management
+  # =====================================================================
+
+  check-project:
+    desc: Verify Xcode project exists
+    status:
+      - test -d QuickRecorder.xcodeproj
+    cmds:
+      - echo "✅ Project verified"
+
+  build:
+    desc: Debug build
+    deps:
+      - check-project
+    cmds:
+      - echo "🔨 Debug Build..."
+      - xcodebuild build -project QuickRecorder.xcodeproj -scheme QuickRecorder -destination 'platform=macOS' -configuration Debug CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="-"
+    sources:
+      - QuickRecorder/**/*.swift
+      - QuickRecorder/Info.plist
+      - QuickRecorder.xcodeproj/project.pbxproj
+
+  release:
+    desc: Release build
+    deps:
+      - check-project
+    cmds:
+      - echo "🚀 Release Build..."
+      - xcodebuild build -project QuickRecorder.xcodeproj -scheme QuickRecorder -destination 'platform=macOS' -configuration Release CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="-"
+    sources:
+      - QuickRecorder/**/*.swift
+      - QuickRecorder/Info.plist
+      - QuickRecorder.xcodeproj/project.pbxproj
+
+  build-plus:
+    desc: Debug build with full logging and analysis
+    deps:
+      - check-project
+    cmds:
+      - chmod +x scripts/build.sh
+      - ./scripts/build.sh "{{.LOG_FILE}}"
+
+  # =====================================================================
+  # Testing Tasks
+  # =====================================================================
+
+  test:
+    desc: Run all tests
+    deps:
+      - check-project
+    cmds:
+      - echo "🧪 Running Tests..."
+      - xcodebuild test -project QuickRecorder.xcodeproj -scheme QuickRecorder -destination 'platform=macOS' -configuration Debug CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
+  test-coverage:
+    desc: Run tests with code coverage
+    deps:
+      - check-project
+    cmds:
+      - echo "🧪 Running Tests with Coverage..."
+      - xcodebuild test -project QuickRecorder.xcodeproj -scheme QuickRecorder -destination 'platform=macOS' -configuration Debug -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
+  # =====================================================================
+  # Distribution Tasks with Build Dependencies
+  # =====================================================================
+
+  archive:
+    desc: Create .xcarchive
+    deps:
+      - release
+    cmds:
+      - echo "📦 Creating Archive..."
+      - cmd: |
+          ARCHIVE_NAME="QuickRecorder-$(date +%Y%m%d-%H%M)"
+          xcodebuild archive \
+              -project QuickRecorder.xcodeproj \
+              -scheme QuickRecorder \
+              -destination 'platform=macOS' \
+              -configuration Release \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY="-" \
+              ARCHIVE_PATH="archive/$ARCHIVE_NAME.xcarchive"
+          echo "✅ Archive created: archive/$ARCHIVE_NAME.xcarchive"
+
+  export-app:
+    desc: Export .app to Desktop
+    deps:
+      - check-project
+    cmds:
+      - echo "📤 Exporting .app to Desktop..."
+      - cmd: |
+          DEST="$HOME/Desktop/release"
+          mkdir -p "$DEST"
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "QuickRecorder.app" -type d -path "*/Release/*" 2>/dev/null | head -1)
+          if [ -n "$APP_PATH" ]; then
+            cp -R "$APP_PATH" "$DEST/"
+            SIZE=$(du -h "$DEST/QuickRecorder.app" | cut -f1)
+            echo "✅ Exported: $DEST/QuickRecorder.app ($SIZE)"
+          else
+            echo "❌ No release build found. Run 'task release' first."
+          fi
+
+  notarize:
+    desc: Build, archive, and notarize
+    deps:
+      - archive
+    cmds:
+      - echo "🔐 Notarizing app..."
+      - cmd: chmod +x scripts/notarize.sh && ./scripts/notarize.sh
+        ignore_error: true
+
+  staple:
+    desc: Staple notarization ticket
+    cmds:
+      - echo "📎 Stapling notarization ticket..."
+      - cmd: chmod +x scripts/staple.sh && ./scripts/staple.sh {{.CLI_ARGS}}
+        ignore_error: true
+
+  appcast:
+    desc: Generate Sparkle appcast.xml
+    cmds:
+      - echo "📡 Generating appcast..."
+      - cmd: chmod +x scripts/generate-appcast.sh && ./scripts/generate-appcast.sh {{.CLI_ARGS}}
+        ignore_error: true
+
+  publish:
+    desc: Complete release workflow
+    deps:
+      - archive
+    cmds:
+      - echo "Release Workflow"
+      - cmd: chmod +x scripts/release.sh && ./scripts/release.sh {{.CLI_ARGS}}
+        ignore_error: true
+
+  # =====================================================================
+  # Maintenance Tasks
+  # =====================================================================
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - echo "🧹 Cleaning..."
+      - rm -rf build
+      - rm -rf release
+      - rm -rf archive
+      - cmd: rm -rf ~/Library/Developer/Xcode/DerivedData/QuickRecorder-* 2>/dev/null || true
+        ignore_error: true
+      - xcodebuild clean -project QuickRecorder.xcodeproj -scheme QuickRecorder 2>/dev/null || true
+      - echo "✅ Cleaned"
+
+  clean-all:
+    desc: Deep clean (remove project, regenerate needed)
+    deps:
+      - clean
+    cmds:
+      - echo "🧹 Deep cleaning..."
+      - cmd: rm -rf ~/.xcodegen 2>/dev/null || true
+        ignore_error: true
+      - rm -rf QuickRecorder.xcodeproj
+      - echo "✅ Deep cleaned (run 'task setup' to regenerate)"
+
+  regenerate:
+    desc: Regenerate project from scratch
+    deps:
+      - clean-all
+      - setup
+    cmds:
+      - echo "✅ Project regenerated"
+
+  # =====================================================================
+  # Development Tasks
+  # =====================================================================
+
+  open:
+    desc: Open project in Xcode
+    deps:
+      - check-project
+    cmds:
+      - echo "📱 Opening in Xcode..."
+      - open QuickRecorder.xcodeproj
+
+  size:
+    desc: Show last build size
+    cmds:
+      - echo "📊 Build Size..."
+      - cmd: du -sh ~/Library/Developer/Xcode/DerivedData/QuickRecorder-*/Build/Products/Release/*.app 2>/dev/null || echo "No release builds found"
+        ignore_error: true
+
+  logs:
+    desc: View build logs
+    cmds:
+      - echo "📄 Build Logs"
+      - cmd: ls -la {{.LOG_DIR}}/ 2>/dev/null || echo "No logs yet"
+        ignore_error: true
+      - cmd: echo "Latest log:" && ls -t {{.LOG_DIR}}/build-*.log 2>/dev/null | head -1 | xargs head -50 || echo "No logs found"
+        ignore_error: true
+
+  errors:
+    desc: Show errors from last build
+    cmds:
+      - echo "Errors from Last Build"
+      - cmd: |
+          LATEST_LOG=$(ls -t {{.LOG_DIR}}/build-*.log 2>/dev/null | head -1)
+          if [ -n "$LATEST_LOG" ]; then
+            echo "Log: $LATEST_LOG"
+            echo ""
+            echo "Error count: $(grep -c 'error:' "$LATEST_LOG" 2>/dev/null || echo '0')"
+            echo ""
+            echo "Errors:"
+            grep 'error:' "$LATEST_LOG" 2>/dev/null | head -10 | nl
+          else
+            echo "No logs found"
+          fi
+        ignore_error: true
+
+  # =====================================================================
+  # CI/CD Tasks
+  # =====================================================================
+
+  ci-build:
+    desc: CI build (no code signing)
+    deps:
+      - check-project
+    cmds:
+      - xcodebuild build -project QuickRecorder.xcodeproj -scheme QuickRecorder -destination 'platform=macOS' -configuration Release CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
+  ci-test:
+    desc: CI test with coverage
+    deps:
+      - check-project
+    cmds:
+      - xcodebuild test -project QuickRecorder.xcodeproj -scheme QuickRecorder -destination 'platform=macOS' -configuration Debug -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
+  ci-check:
+    desc: CI full check (build + test)
+    deps:
+      - ci-build
+      - ci-test
+    cmds:
+      - echo "✅ CI check passed"

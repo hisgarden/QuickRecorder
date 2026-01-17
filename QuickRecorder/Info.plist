@@ -53,6 +53,8 @@
 	</array>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>QuickRecorder needs access to the microphone to record audio with your screen recording.</string>
 	<key>OSAScriptingDefinition</key>
 	<string>Scriptable</string>
 	<!-- Sparkle Update Feed - Uncomment after publishing appcast.xml to GitHub -->
