@@ -24,8 +24,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    MARKETING_VERSION: "1.7.0"
-    CURRENT_PROJECT_VERSION: "170"
+    MARKETING_VERSION: "1.7.1"
+    CURRENT_PROJECT_VERSION: "171"
     # Code Signing Settings
     # For notarization: MUST set DEVELOPMENT_TEAM to your Team ID
     # Find your Team ID in your Developer ID certificate name: Developer ID Application: Name (TEAMID)
