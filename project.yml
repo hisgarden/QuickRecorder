@@ -29,34 +29,26 @@ settings:
     # Code Signing Settings
     # For notarization: MUST set DEVELOPMENT_TEAM to your Team ID
     # Find your Team ID in your Developer ID certificate name: Developer ID Application: Name (TEAMID)
-    DEVELOPMENT_TEAM: "NSDC3EDS2G"  # Set to your actual Team ID for signing
-    CODE_SIGN_IDENTITY: "Developer ID Application"  # Use "Developer ID Application" for notarization
+    DEVELOPMENT_TEAM: "NSDC3EDS2G" # Set to your actual Team ID for signing
+    CODE_SIGN_IDENTITY: "Developer ID Application" # Use "Developer ID Application" for notarization
     CODE_SIGNING_REQUIRED: "YES"
     CODE_SIGNING_ALLOWED: "YES"
-    ENABLE_HARDENED_RUNTIME: "YES"  # Required for notarization
-    OTHER_CODE_SIGN_FLAGS: "--timestamp"  # Add timestamp for notarization
+    ENABLE_HARDENED_RUNTIME: "YES" # Required for notarization
+    OTHER_CODE_SIGN_FLAGS: "--timestamp" # Add timestamp for notarization
 
 packages:
   # Swift Package Manager Dependencies
   AECAudioStream:
     url: https://github.com/lihaoyun6/AECAudioStream.git
     revision: 0eab971c1dd0420ee84646c71172dd66fa59117c
-  
+
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts.git
     exactVersion: 2.2.4
-  
-  MatrixColorSelector:
-    url: https://github.com/lihaoyun6/MatrixColorSelector.git
-    revision: 0853e68c0c9b205ffe6a963f2a56b26e6ceca51a
-  
+
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     exactVersion: 2.6.0
-  
-  SwiftLAME:
-    url: https://github.com/hidden-spectrum/SwiftLAME.git
-    revision: e8256a8151594f47f103c742f684253c6c44871d
 
 targets:
   # =============================================================================
@@ -145,9 +137,7 @@ targets:
     dependencies:
       - package: AECAudioStream
       - package: KeyboardShortcuts
-      - package: MatrixColorSelector
       - package: Sparkle
-      - package: SwiftLAME
     postCompileScripts:
       - script: |
           # Sparkle Appcast Generation (if configured)
@@ -211,4 +201,3 @@ schemes:
       config: Debug
     archive:
       config: Release
-

@@ -5,9 +5,10 @@
 //  Test suite for SCContext methods and properties
 //
 
-import XCTest
 import AVFoundation
 import ScreenCaptureKit
+import XCTest
+
 @testable import QuickRecorder
 
 final class SCContextTests: XCTestCase {
@@ -18,7 +19,10 @@ final class SCContextTests: XCTestCase {
         super.setUp()
         mockUserDefaults = UserDefaults.standard
         // Clear test keys before each test
-        let testKeys = ["saveDirectory", "audioFormat", "audioQuality", "background", "videoFormat", "encoder", "videoQuality", "frameRate", "recordMic", "micDevice"]
+        let testKeys = [
+            "saveDirectory", "audioFormat", "audioQuality", "background", "videoFormat", "encoder",
+            "videoQuality", "frameRate", "recordMic", "micDevice",
+        ]
         for key in testKeys {
             mockUserDefaults.removeObject(forKey: key)
         }
@@ -26,7 +30,10 @@ final class SCContextTests: XCTestCase {
 
     override func tearDown() {
         // Clean up test keys
-        let testKeys = ["saveDirectory", "audioFormat", "audioQuality", "background", "videoFormat", "encoder", "videoQuality", "frameRate", "recordMic", "micDevice"]
+        let testKeys = [
+            "saveDirectory", "audioFormat", "audioQuality", "background", "videoFormat", "encoder",
+            "videoQuality", "frameRate", "recordMic", "micDevice",
+        ]
         for key in testKeys {
             mockUserDefaults.removeObject(forKey: key)
         }
@@ -53,7 +60,9 @@ final class SCContextTests: XCTestCase {
         // Check if path starts with saveDirectory (accounting for localized strings)
         XCTAssertTrue(filePath.hasPrefix(saveDirectory) || filePath.contains(saveDirectory))
         // Check for date pattern or localized recording string
-        XCTAssertTrue(filePath.contains("Recording") || filePath.contains("at") || filePath.count > saveDirectory.count)
+        XCTAssertTrue(
+            filePath.contains("Recording") || filePath.contains("at")
+                || filePath.count > saveDirectory.count)
     }
 
     func testGetFilePath_ForCapture_IncludesCapturePrefix() {
@@ -66,7 +75,9 @@ final class SCContextTests: XCTestCase {
 
         // Then
         // Check for capture prefix (accounting for localized strings)
-        XCTAssertTrue(filePath.contains("Capturing") || filePath.contains("Capture") || filePath.count > saveDirectory.count)
+        XCTAssertTrue(
+            filePath.contains("Capturing") || filePath.contains("Capture")
+                || filePath.count > saveDirectory.count)
     }
 
     func testGetFilePath_IncludesTimestamp() {
@@ -100,18 +111,6 @@ final class SCContextTests: XCTestCase {
         XCTAssertEqual(settings[AVNumberOfChannelsKey] as? Int, 2)
         XCTAssertEqual(settings[AVFormatIDKey] as? UInt32, kAudioFormatMPEG4AAC)
         XCTAssertNotNil(settings[AVEncoderBitRateKey])
-    }
-
-    func testUpdateAudioSettings_MP3Format_ReturnsAACSettings() {
-        // Given
-        mockUserDefaults.set(AudioFormat.mp3.rawValue, forKey: "audioFormat")
-        mockUserDefaults.set(AudioQuality.high.rawValue, forKey: "audioQuality")
-
-        // When
-        let settings = SCContext.updateAudioSettings()
-
-        // Then
-        XCTAssertEqual(settings[AVFormatIDKey] as? UInt32, kAudioFormatMPEG4AAC)
     }
 
     func testUpdateAudioSettings_ALACFormat_ReturnsALACSettings() {
@@ -218,7 +217,7 @@ final class SCContextTests: XCTestCase {
             (.blue, NSColor.systemBlue.cgColor),
             (.yellow, NSColor.systemYellow.cgColor),
             (.orange, NSColor.systemOrange.cgColor),
-            (.gray, NSColor.systemGray.cgColor)
+            (.gray, NSColor.systemGray.cgColor),
         ]
 
         for (backgroundType, expectedColor) in testCases {
@@ -449,7 +448,6 @@ final class SCContextTests: XCTestCase {
         XCTAssertEqual(AudioFormat.alac.rawValue, "alac")
         XCTAssertEqual(AudioFormat.flac.rawValue, "flac")
         XCTAssertEqual(AudioFormat.opus.rawValue, "opus")
-        XCTAssertEqual(AudioFormat.mp3.rawValue, "mp3")
     }
 
     // MARK: - Audio Quality Tests
@@ -485,7 +483,7 @@ final class SCContextTests: XCTestCase {
         SCContext.recordCam = ""
         SCContext.recordDevice = ""
         SCContext.autoStop = 0
-        SCContext.streamType = nil // Ensure streamType is nil to avoid accessing vW/vwInput/awInput
+        SCContext.streamType = nil  // Ensure streamType is nil to avoid accessing vW/vwInput/awInput
 
         // When - call stopRecording (may not complete fully without full setup)
         // This tests that the method exists and can be called

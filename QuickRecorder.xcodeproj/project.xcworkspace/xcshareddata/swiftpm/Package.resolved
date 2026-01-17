@@ -1,5 +1,5 @@
 {
-  "originHash" : "ee17c4e350dfd666841f5165991c19d16cc86282655b7228abd367675e17f44d",
+  "originHash" : "6097b628df0906709733d15f1be90a8be5aa4aba83bd2ab4c72ecac8b69c9c65",
   "pins" : [
     {
       "identity" : "aecaudiostream",
@@ -20,29 +20,12 @@
       }
     },
     {
-      "identity" : "matrixcolorselector",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lihaoyun6/MatrixColorSelector.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "0853e68c0c9b205ffe6a963f2a56b26e6ceca51a"
-      }
-    },
-    {
       "identity" : "sparkle",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle",
       "state" : {
         "revision" : "0a4caaf7a81eea2cece651ef4b17331fa0634dff",
         "version" : "2.6.0"
-      }
-    },
-    {
-      "identity" : "swiftlame",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/hidden-spectrum/SwiftLAME.git",
-      "state" : {
-        "revision" : "e8256a8151594f47f103c742f684253c6c44871d"
       }
     }
   ],
