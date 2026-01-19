@@ -24,10 +24,16 @@
 Download the latest installation file from [GitHub Releases](https://github.com/hisgarden/QuickRecorder/releases/latest) or install via Homebrew:
 
 ```bash
-brew install lihaoyun6/tap/quickrecorder
-```
+# Install from this fork's tap
+brew tap hisgarden/tap
+brew install --cask quickrecorder
 
-> **Note:** The Homebrew formula is maintained by the original upstream repository. For this fork, please download directly from [GitHub Releases](https://github.com/hisgarden/QuickRecorder/releases/latest).
+# Or install directly without tapping
+brew install --cask hisgarden/tap/quickrecorder
+
+# Original upstream (alternative)
+# brew install lihaoyun6/tap/quickrecorder
+```
 
 ### Features/Usage:
 - You can use QuickRecorder to record your screens / windows / applications / mobile devices... etc.
