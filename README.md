@@ -21,10 +21,14 @@
 - macOS 12.3 and Later
 
 ### Install:
-Download the latest installation file [here](../../releases/latest) or install via Homebrew:
+Download the latest installation file from [GitHub Releases](https://github.com/hisgarden/QuickRecorder/releases/latest) or install via Homebrew:
 
 ```bash
+# Original upstream (recommended for stable releases)
 brew install lihaoyun6/tap/quickrecorder
+
+# This fork (if you have a Homebrew tap set up)
+# brew install hisgarden/tap/quickrecorder
 ```
 
 ### Features/Usage:
