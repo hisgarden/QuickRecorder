@@ -293,7 +293,7 @@ tasks:
     cmds:
       - echo "🍺 Updating Homebrew cask..."
       - chmod +x scripts/update-homebrew-cask.sh
-      - cmd: bash scripts/update-homebrew-cask.sh {{.CLI_ARGS}}
+      - cmd: NONINTERACTIVE=1 bash scripts/update-homebrew-cask.sh {{.CLI_ARGS}}
         ignore_error: false
 
   publish:

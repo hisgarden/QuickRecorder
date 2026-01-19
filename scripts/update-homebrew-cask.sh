@@ -116,12 +116,24 @@ log_success "Cask file updated"
 log_info "Changes:"
 git diff "$CASK_FILE" || true
 
-# Commit and push
-read -p "Commit and push changes? (y/N): " -n 1 -r
-echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+# Check if there are actual changes to commit
+if ! git diff --quiet "$CASK_FILE"; then
     # Configure git to use GitHub no-reply email for this repo
     git config user.email "hisgarden@users.noreply.github.com"
+    
+    # Check if running non-interactively (from CI or as dependency)
+    if [ -t 0 ] && [ -z "${CI:-}" ] && [ -z "${NONINTERACTIVE:-}" ]; then
+        # Interactive mode - ask for confirmation
+        read -p "Commit and push changes? (y/N): " -n 1 -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log_info "Changes not committed. Review ${CASK_FILE} and commit manually."
+            exit 0
+        fi
+    else
+        # Non-interactive mode - auto-commit
+        log_info "Non-interactive mode: auto-committing changes..."
+    fi
     
     git add "$CASK_FILE"
     git commit -m "Update QuickRecorder to v${VERSION}"
@@ -132,5 +144,5 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "  brew tap hisgarden/tap"
     echo "  brew install --cask quickrecorder"
 else
-    log_info "Changes not committed. Review ${CASK_FILE} and commit manually."
+    log_info "No changes detected - cask already up to date"
 fi
