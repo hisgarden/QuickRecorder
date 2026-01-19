@@ -66,5 +66,30 @@ This release focuses on code quality and maintainability by reducing external de
                  length="3836331"
                  type="application/octet-stream"/>
     </item>
+    <item>
+      <title>Version 1.7.0</title>
+      <description><![CDATA[&lt;h2&gt;QuickRecorder 1.7.0&lt;/h2&gt;
+&lt;p&gt;This is the first officially notarized release of QuickRecorder, ready for secure distribution outside the Mac App Store.&lt;/p&gt;
+&lt;h3&gt;New Features&lt;/h3&gt;
+&lt;ul&gt;
+    &lt;li&gt;Full Apple notarization for Gatekeeper compliance&lt;/li&gt;
+    &lt;li&gt;Developer ID signing for secure distribution&lt;/li&gt;
+    &lt;li&gt;Automatic update support via Sparkle&lt;/li&gt;
+    &lt;li&gt;Enhanced security with hardened runtime&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Improvements&lt;/h3&gt;
+&lt;ul&gt;
+    &lt;li&gt;Improved screen recording stability&lt;/li&gt;
+    &lt;li&gt;Better audio capture performance&lt;/li&gt;
+    &lt;li&gt;Enhanced window selection workflow&lt;/li&gt;
+&lt;/ul&gt;]]></description>
+      <pubDate>Sat, 17 Jan 2026 17:50:17 +0000</pubDate>
+      <enclosure url="https://github.com/hisgarden/QuickRecorder/releases/download/v1.7.0/QuickRecorder-1.7.0.zip"
+                 sparkle:version="1.7.0"
+                 sparkle:shortVersionString="1.7.0"
+                 
+                 length="3980724"
+                 type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
