@@ -269,7 +269,9 @@ tasks:
         ignore_error: true
 
   gh-release:
-    desc: Create GitHub release with DMG/ZIP (auto-finds latest file or use CLI_ARGS)
+    desc: Create GitHub release with DMG/ZIP and update Homebrew cask (auto-finds latest file or use CLI_ARGS)
+    deps:
+      - update-homebrew
     cmds:
       - echo "🚀 Creating GitHub Release..."
       - chmod +x scripts/create-gh-release.sh
@@ -277,7 +279,9 @@ tasks:
         ignore_error: false
 
   gh-release-force:
-    desc: Create GitHub release (force overwrite if tag exists)
+    desc: Create GitHub release (force overwrite if tag exists) and update Homebrew cask
+    deps:
+      - update-homebrew
     cmds:
       - echo "🚀 Creating GitHub Release (force overwrite)..."
       - chmod +x scripts/create-gh-release.sh

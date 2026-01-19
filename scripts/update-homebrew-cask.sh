@@ -41,14 +41,29 @@ log_info "Version: ${VERSION}"
 
 # Find DMG file if not provided
 if [ -z "$DMG_PATH" ]; then
-    DMG_PATH=$(find "${REPO_DIR}" -name "QuickRecorder.dmg" -type f 2>/dev/null | head -1)
+    # Check current directory first (most recent build)
+    DMG_PATH=$(find "${REPO_DIR}" -maxdepth 1 -name "QuickRecorder.dmg" -type f 2>/dev/null | head -1)
     if [ -z "$DMG_PATH" ]; then
-        # Try GitHub releases
-        DMG_PATH="${REPO_DIR}/releases/QuickRecorder-${VERSION}.dmg"
-        if [ ! -f "$DMG_PATH" ]; then
-            log_error "DMG file not found. Please provide path: $0 ${VERSION} path/to/QuickRecorder.dmg"
-            exit 1
+        # Try releases directory
+        DMG_PATH=$(find "${REPO_DIR}/releases" -name "QuickRecorder-${VERSION}.dmg" -type f 2>/dev/null | head -1)
+    fi
+    if [ -z "$DMG_PATH" ]; then
+        # Try archive exports
+        DMG_PATH=$(find "${REPO_DIR}/archive/export-*" -name "QuickRecorder.app" -type d 2>/dev/null | sort -r | head -1)
+        if [ -n "$DMG_PATH" ]; then
+            log_info "Found app, will create DMG first..."
+            # Create DMG if we found an app but no DMG
+            "${REPO_DIR}/scripts/create-dmg.sh" "$DMG_PATH" || {
+                log_error "Failed to create DMG. Please create DMG first: task create-dmg"
+                exit 1
+            }
+            DMG_PATH="${REPO_DIR}/QuickRecorder.dmg"
         fi
+    fi
+    if [ -z "$DMG_PATH" ] || [ ! -f "$DMG_PATH" ]; then
+        log_error "DMG file not found. Please provide path: $0 ${VERSION} path/to/QuickRecorder.dmg"
+        log_info "Or create DMG first: task create-dmg"
+        exit 1
     fi
 fi
 
