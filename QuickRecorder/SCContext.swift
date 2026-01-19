@@ -60,26 +60,71 @@ class SCContext {
     private static var isMonitoringPermissions = false
     private static var permissionRetryCount = 0
     private static let maxPermissionRetries = 30  // 30 seconds of retrying
+    private static var hasRequestedPermission = false  // Track if we've already shown the dialog
+    private static var lastPermissionRequestTime: Date?  // Track when we last requested permission
 
     // SOLUTION 1: Asynchronous permission checking
     static func checkPermissionsAsync(completion: @escaping (Bool) -> Void) {
+        // Check if we recently restarted due to permission grant
+        if let lastRestart = UserDefaults.standard.object(forKey: "lastPermissionRestart") as? TimeInterval {
+            let timeSinceRestart = Date().timeIntervalSince1970 - lastRestart
+            if timeSinceRestart < 10.0 {
+                // Just restarted - give macOS extra time to process permissions
+                print("Recently restarted after permission grant, giving macOS time to process".local)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    // Clear the flag after the delay
+                    UserDefaults.standard.removeObject(forKey: "lastPermissionRestart")
+                    UserDefaults.standard.synchronize()
+                    
+                    // Now check permissions
+                    self.checkPermissionsAsyncInternal(completion: completion)
+                }
+                return
+            } else {
+                // Old restart, clear the flag
+                UserDefaults.standard.removeObject(forKey: "lastPermissionRestart")
+                UserDefaults.standard.synchronize()
+            }
+        }
+        
+        checkPermissionsAsyncInternal(completion: completion)
+    }
+    
+    private static func checkPermissionsAsyncInternal(completion: @escaping (Bool) -> Void) {
         // Use preflight check first (SOLUTION 4)
         if !CGPreflightScreenCaptureAccess() {
-            // Trigger the system dialog by making the actual request
-            // Note: This shows a system modal dialog that will close automatically
-            // when user clicks "Open System Settings" - macOS handles this
-            CGRequestScreenCaptureAccess()
-            
-            // Give macOS a moment to process the dialog interaction
-            // The system dialog should close automatically when System Settings opens
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                updateAvailableContentWithMonitoring { content in
-                    completion(content != nil)
+            // Check if we recently requested permission (within last 5 seconds)
+            // This prevents repeated dialogs during app restart
+            if let lastRequest = lastPermissionRequestTime,
+               Date().timeIntervalSince(lastRequest) < 5.0 {
+                // Too soon after last request - just wait and check again
+                print("Recently requested permission, waiting before showing dialog again".local)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    self.checkPermissionsAsyncInternal(completion: completion)
                 }
+                return
             }
+            
+            // Only show the dialog once per app session to prevent repeated dialogs
+            if !hasRequestedPermission {
+                hasRequestedPermission = true
+                lastPermissionRequestTime = Date()
+                // Show our custom dialog instead of the system one
+                requestPermissions()
+                completion(false)
+                return
+            }
+            
+            // Already requested - don't call any ScreenCaptureKit APIs
+            // as they would trigger the system dialog again
+            // Just return false and let the monitoring continue
+            completion(false)
             return
         }
 
+        // Permission is granted - reset the flag for next time
+        hasRequestedPermission = false
+        lastPermissionRequestTime = nil
         updateAvailableContentWithMonitoring { content in
             completion(content != nil)
         }
@@ -90,22 +135,28 @@ class SCContext {
         // Use preflight check to avoid unnecessary blocking (SOLUTION 4)
         let hasAccess = CGPreflightScreenCaptureAccess()
         if !hasAccess {
-            // Don't block - return nil immediately and let async monitoring handle it
+            // Don't block - return nil immediately and DON'T call any ScreenCaptureKit APIs
             print(
                 "Screen recording permission not granted. Use checkPermissionsAsync for better handling."
                     .local)
             return nil
         }
 
+        // Permission granted - safe to call the API
         let semaphore = DispatchSemaphore(value: 0)
         var result: SCShareableContent? = nil
 
-        updateAvailableContent { content in
-            result = content
+        SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: true) { content, error in
+            if let error = error {
+                print("Error fetching content: \(error.localizedDescription)")
+            } else {
+                result = content
+            }
             semaphore.signal()
         }
 
         semaphore.wait()
+        availableContent = result
         return result
     }
 
@@ -122,6 +173,30 @@ class SCContext {
     private static func updateAvailableContentWithRetry(
         completion: @escaping (SCShareableContent?) -> Void
     ) {
+        // Check permission first to avoid triggering dialog unnecessarily
+        if !CGPreflightScreenCaptureAccess() {
+            // Don't make any ScreenCaptureKit API calls - they trigger the system dialog
+            // Just wait and retry the preflight check
+            if isMonitoringPermissions && permissionRetryCount < maxPermissionRetries {
+                permissionRetryCount += 1
+                print(
+                    "Permission check retry \(permissionRetryCount)/\(maxPermissionRetries) - waiting for permission grant"
+                        .local)
+                DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+                    self.updateAvailableContentWithRetry(completion: completion)
+                }
+            } else {
+                // Max retries reached or monitoring stopped
+                stopPermissionMonitoring()
+                completion(nil)
+            }
+            return
+        }
+        
+        // Permission is granted - reset flags and make the API call
+        hasRequestedPermission = false
+        permissionRetryCount = 0
+        
         SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: true) {
             [self] content, error in
             if let error = error {
@@ -169,9 +244,16 @@ class SCContext {
         permissionRetryCount = 0
     }
 
-    // Keep original method for backward compatibility
+    // Keep original method for backward compatibility - but ADD permission check
     private static func updateAvailableContent(completion: @escaping (SCShareableContent?) -> Void)
     {
+        // Check permission first to avoid triggering system dialog
+        if !CGPreflightScreenCaptureAccess() {
+            print("Screen recording permission not granted in updateAvailableContent".local)
+            completion(nil)
+            return
+        }
+        
         SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: true) {
             [self] content, error in
             if let error = error {
@@ -200,11 +282,23 @@ class SCContext {
     }
 
     static func updateAvailableContent(completion: @escaping () -> Void) {
+        // Check permission first to avoid triggering system dialog
+        if !CGPreflightScreenCaptureAccess() {
+            print("Screen recording permission not granted. Cannot update available content.".local)
+            // Show permission dialog if not already shown
+            if !hasRequestedPermission {
+                requestPermissions()
+            }
+            return
+        }
+        
         SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: false) {
             content, error in
             if let error = error {
                 switch error {
-                case SCStreamError.userDeclined: requestPermissions()
+                case SCStreamError.userDeclined: 
+                    print("User declined screen capture access".local)
+                    requestPermissions()
                 default:
                     print(
                         "Error: failed to fetch available content: ".local,
@@ -397,39 +491,20 @@ class SCContext {
                 button2: "Quit"
             )
 
-            // Use beginSheetModal to allow non-blocking behavior
-            // This allows the dialog to close immediately after opening System Settings
-            if let window = NSApp.mainWindow ?? NSApp.windows.first {
-                alert.beginSheetModal(for: window) { response in
-                    if response == .alertFirstButtonReturn {
-                        // Open System Settings
-                        NSWorkspace.shared.open(
-                            URL(
-                                string:
-                                    "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-                            )!)
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                // Open System Settings
+                NSWorkspace.shared.open(
+                    URL(
+                        string:
+                            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+                    )!)
 
-                        // Start monitoring for permission changes
-                        monitorPermissionAndRestart()
-                    } else {
-                        NSApp.terminate(self)
-                    }
-                }
+                // Start monitoring for permission changes
+                // This only uses CGPreflightScreenCaptureAccess which doesn't trigger dialogs
+                monitorPermissionAndRestart()
             } else {
-                // Fallback to modal if no window available
-                if alert.runModal() == .alertFirstButtonReturn {
-                    // Open System Settings
-                    NSWorkspace.shared.open(
-                        URL(
-                            string:
-                                "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-                        )!)
-
-                    // Start monitoring for permission changes
-                    monitorPermissionAndRestart()
-                } else {
-                    NSApp.terminate(self)
-                }
+                NSApp.terminate(self)
             }
         }
     }
@@ -480,13 +555,22 @@ class SCContext {
 
     // Restart the application
     private static func restartApplication() {
+        // Store a flag indicating we're restarting due to permission grant
+        // This helps prevent the permission dialog from showing again immediately
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastPermissionRestart")
+        UserDefaults.standard.synchronize()
+        
         let url = URL(fileURLWithPath: Bundle.main.resourcePath!)
         let path = url.deletingLastPathComponent().deletingLastPathComponent().absoluteString
         let task = Process()
         task.launchPath = "/usr/bin/open"
         task.arguments = [path]
         task.launch()
-        NSApp.terminate(self)
+        
+        // Give the new process a moment to start before terminating
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NSApp.terminate(self)
+        }
     }
 
     static func requestCameraPermission() {

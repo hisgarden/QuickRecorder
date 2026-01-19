@@ -41,7 +41,6 @@
 		9F52EB00D7FB32A12196483B /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AFDA9386295BB6CA49DD2B4B /* Sparkle */; };
 		AB21A63489FF5531CD348FE7 /* Sparkle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F38AB24F98B8287CCFA41F0 /* Sparkle.swift */; };
 		BA49ECE4ACCA82467B654847 /* SCContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E033F22A786FCB4920D31A /* SCContextTests.swift */; };
-		BC345CD581DA19F8E9149CF9 /* Assets.xcassets in Sources */ = {isa = PBXBuildFile; fileRef = 5620E7E604464F71357701CD /* Assets.xcassets */; };
 		C26E87CEF2FBC0021BDE435B /* QuickRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F53C27BDC93027FBBE3761C5 /* QuickRecorderTests.swift */; };
 		C30B6F000B533C43048508B9 /* MousePointer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CDB82CFC6FD6D6228AE9415 /* MousePointer.swift */; };
 		CC0174A706714569C305DBF3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2546D2B36DF5ED45ECA3C93F /* SettingsView.swift */; };
@@ -403,7 +402,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Sentry Debug Symbols Upload\n# Only upload for Release builds to avoid unnecessary uploads during development\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Sentry debug symbols upload for ${CONFIGURATION} build\"\n  exit 0\nfi\n\n# Ensure sentry-cli is available\nif ! command -v sentry-cli >/dev/null 2>&1; then\n  echo \"warning: sentry-cli not found. Install with: brew install getsentry/tools/sentry-cli\"\n  exit 0\nfi\n\n# Check if dSYM folder exists\nif [ -z \"${DWARF_DSYM_FOLDER_PATH}\" ] || [ ! -d \"${DWARF_DSYM_FOLDER_PATH}\" ]; then\n  echo \"warning: dSYM folder not found at ${DWARF_DSYM_FOLDER_PATH}\"\n  exit 0\nfi\n\n# Upload debug symbols using .sentryclirc for authentication\n# sentry-cli will automatically read org/project from .sentryclirc [defaults] section\necho \"Uploading debug symbols to Sentry...\"\nERROR=$(sentry-cli debug-files upload \\\n  --include-sources \\\n  \"${DWARF_DSYM_FOLDER_PATH}\" 2>&1)\n\nif [ $? -eq 0 ]; then\n  echo \"✅ Successfully uploaded debug symbols to Sentry\"\nelse\n  echo \"warning: Sentry debug symbols upload failed: $ERROR\"\n  # Don't fail the build if Sentry upload fails\n  exit 0\nfi\n";
+			shellScript = "# Sentry Debug Symbols Upload\n# Only upload for Release builds to avoid unnecessary uploads during development\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Sentry debug symbols upload for ${CONFIGURATION} build\"\n  exit 0\nfi\n\n# Skip if code signing is disabled (common during archive for distribution)\nif [ \"${CODE_SIGNING_ALLOWED}\" = \"NO\" ] || [ -z \"${CODE_SIGN_IDENTITY}\" ] || [ \"${CODE_SIGN_IDENTITY}\" = \"-\" ]; then\n  echo \"Skipping Sentry debug symbols upload for ${CONFIGURATION} build (code signing disabled)\"\n  exit 0\nfi\n\n# Ensure sentry-cli is available\nif ! command -v sentry-cli >/dev/null 2>&1; then\n  echo \"warning: sentry-cli not found. Install with: brew install getsentry/tools/sentry-cli\"\n  exit 0\nfi\n\n# Check if dSYM folder exists\nif [ -z \"${DWARF_DSYM_FOLDER_PATH}\" ] || [ ! -d \"${DWARF_DSYM_FOLDER_PATH}\" ]; then\n  echo \"warning: dSYM folder not found at ${DWARF_DSYM_FOLDER_PATH}\"\n  exit 0\nfi\n\n# Upload debug symbols using .sentryclirc for authentication\n# sentry-cli will automatically read org/project from .sentryclirc [defaults] section\necho \"Uploading debug symbols to Sentry...\"\nset +e\nERROR=$(sentry-cli debug-files upload \\\n  --include-sources \\\n  \"${DWARF_DSYM_FOLDER_PATH}\" 2>&1)\nEXIT_CODE=$?\nset -e\n\nif [ $EXIT_CODE -eq 0 ]; then\n  echo \"✅ Successfully uploaded debug symbols to Sentry\"\nelse\n  echo \"warning: Sentry debug symbols upload failed: $ERROR\"\n  # Don't fail the build if Sentry upload fails\nfi\n\n# Always exit 0 to prevent build failures\nexit 0\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -431,7 +430,6 @@
 				53394F8B5688817B811310EC /* AppSelector.swift in Sources */,
 				E1CD9217FA941F4943545C2B /* AppleScript.swift in Sources */,
 				86BDA9EC207299D92CC2C184 /* AreaSelector.swift in Sources */,
-				BC345CD581DA19F8E9149CF9 /* Assets.xcassets in Sources */,
 				F26CEE19F36FB64A62D0EEB6 /* CameraOverlayer.swift in Sources */,
 				F88DB220C21FBF078E9497FA /* Color+Extensions.swift in Sources */,
 				D751565E58C101C8F68DFBDB /* ContentView.swift in Sources */,

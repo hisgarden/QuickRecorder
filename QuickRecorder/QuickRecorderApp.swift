@@ -255,12 +255,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         // IMPROVED: Use async permission checking to avoid blocking and enable auto-restart
-        SCContext.checkPermissionsAsync { hasPermission in
-            scPerm = hasPermission
-            if hasPermission {
-                print("Screen recording permission granted".local)
-            } else {
-                print("Screen recording permission denied or pending".local)
+        // Add a small delay to allow macOS to fully process permissions after a restart
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            SCContext.checkPermissionsAsync { hasPermission in
+                scPerm = hasPermission
+                if hasPermission {
+                    print("Screen recording permission granted".local)
+                    // Permission granted - show main UI if on dock
+                    if self.showOnDock {
+                        DispatchQueue.main.async {
+                            _ = self.applicationShouldHandleReopen(NSApp, hasVisibleWindows: true)
+                        }
+                    }
+                } else {
+                    print("Screen recording permission denied or pending".local)
+                    // Don't show main UI - permission dialog will be shown instead
+                }
             }
         }
 
@@ -488,7 +498,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         #endif
 
         closeAllWindow()
-        if showOnDock { _ = applicationShouldHandleReopen(NSApp, hasVisibleWindows: true) }
+        
+        // Don't show UI here - it's now shown in applicationWillFinishLaunching 
+        // after permission check completes
+        
         tips(
             "Would you like to use H.265 format for better video quality and smaller file size?",
             id: "qr.switch-to-h265.note", buttonTitle: "Use H.265", switchButton: true
