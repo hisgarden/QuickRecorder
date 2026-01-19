@@ -5,28 +5,65 @@
     <description>QuickRecorder updates</description>
     <language>en</language>
     <item>
-      <title>Version 1.7.0</title>
-      <description><![CDATA[&lt;h2&gt;QuickRecorder 1.7.0&lt;/h2&gt;
-&lt;p&gt;This is the first officially notarized release of QuickRecorder, ready for secure distribution outside the Mac App Store.&lt;/p&gt;
-&lt;h3&gt;New Features&lt;/h3&gt;
-&lt;ul&gt;
-    &lt;li&gt;Full Apple notarization for Gatekeeper compliance&lt;/li&gt;
-    &lt;li&gt;Developer ID signing for secure distribution&lt;/li&gt;
-    &lt;li&gt;Automatic update support via Sparkle&lt;/li&gt;
-    &lt;li&gt;Enhanced security with hardened runtime&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Improvements&lt;/h3&gt;
-&lt;ul&gt;
-    &lt;li&gt;Improved screen recording stability&lt;/li&gt;
-    &lt;li&gt;Better audio capture performance&lt;/li&gt;
-    &lt;li&gt;Enhanced window selection workflow&lt;/li&gt;
-&lt;/ul&gt;]]></description>
-      <pubDate>Sat, 17 Jan 2026 17:50:17 +0000</pubDate>
-      <enclosure url="https://github.com/hisgarden/QuickRecorder/releases/download/v1.7.0/QuickRecorder-1.7.0.zip"
-                 sparkle:version="1.7.0"
-                 sparkle:shortVersionString="1.7.0"
+      <title>Version 1.7.1</title>
+      <description><![CDATA[# QuickRecorder v1.7.1 - Dependency Minimization Release
+
+## 🎯 Key Improvements
+
+### Dependency Reduction (40% smaller!)
+- **Removed SwiftLAME** - Eliminated external MP3 encoding library
+- **SPM Dependencies**: Reduced from 5 to 3 packages
+- **Smaller binary size** - Fewer dependencies means leaner app
+- **Faster builds** - No external C library compilation
+
+### Streamlined Audio Formats
+- ✅ **AAC** - Modern, high-quality (recommended default)
+- ✅ **ALAC** - Apple Lossless (preserved quality)
+- ✅ **FLAC** - Free Lossless Audio Codec
+- ✅ **Opus** - Modern, efficient codec
+- ❌ **MP3** - Removed (use AAC instead for better quality)
+
+## 📦 Remaining Dependencies (All Essential)
+
+1. **AECAudioStream** - Acoustic Echo Cancellation
+   - Prevents feedback when recording mic + system audio
+   - Core quality-of-life feature
+
+2. **KeyboardShortcuts** - Global Hotkey Management  
+   - Hands-free recording control
+   - User-configurable shortcuts
+
+3. **Sparkle** - Auto-Update Framework
+   - Industry standard for macOS apps
+   - Secure update delivery
+
+## 🔧 Technical Details
+
+- **SBOM Updated** - Software Bill of Materials reflects new minimal dependency set
+- **Build Verified** - All tests pass, build succeeds
+- **Version**: 1.7.1 (Build 171)
+- **Compatibility**: macOS 12.3+
+
+## 📝 Migration Notes
+
+If you previously used MP3 export:
+- Switch to **AAC** format (better quality at same bitrate)
+- Or use **FLAC** for lossless archival
+- AAC is widely compatible and offers superior compression
+
+## 🙏 Credits
+
+This release focuses on code quality and maintainability by reducing external dependencies while preserving all essential functionality.
+
+---
+
+**Full Changelog**: https://github.com/hisgarden/QuickRecorder/compare/v1.7.0...v1.7.1]]></description>
+      <pubDate>Mon, 19 Jan 2026 19:16:32 +0000</pubDate>
+      <enclosure url="https://github.com/hisgarden/QuickRecorder/releases/download/v1.7.1/QuickRecorder.dmg"
+                 sparkle:version="1.7.1"
+                 sparkle:shortVersionString="1.7.1"
                  
-                 length="3980724"
+                 length="3836331"
                  type="application/octet-stream"/>
     </item>
   </channel>
