@@ -81,7 +81,7 @@ For the original upstream repository, please visit: [lihaoyun6/QuickRecorder](ht
 
 ## Thanks
 [Azayaka](https://github.com/Mnpn/Azayaka) @Mnpn
-> The source of inspiration and part of the code of the screen recording engine comes from the Azayaka project, and I am also one of the code contributors to this project
+> The source of inspiration and part of the code of the screen recording engine comes from the Azayaka project. The original QuickRecorder author ([lihaoyun6](https://github.com/lihaoyun6)) is also one of the code contributors to the Azayaka project
 
 [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) @sindresorhus  
 > QuickRecorder uses this swift library to handle shortcut key events  
