@@ -63,6 +63,7 @@ default:
     @echo "Distribution:"
     @echo "  just archive        Create .xcarchive"
     @echo "  just export         Export .app to Desktop"
+    @echo "  just create-dmg     Create DMG from app (auto-finds latest export)"
     @echo "  just notarize       Build + archive + notarize"
     @echo "  just publish        Complete release: DMG + appcast + git push"
     @echo "  just appcast        Generate/update appcast.xml"
@@ -254,6 +255,15 @@ export-app:
     cp -R "$APP_PATH" "$DEST/" && \
     SIZE=$(du -h "$DEST/QuickRecorder.app" | cut -f1) && \
     echo "✅ Exported: $DEST/QuickRecorder.app ($SIZE)"
+
+# Create DMG from app
+# Usage: just create-dmg [app_path]
+# Examples:
+#   just create-dmg                                    # Auto-find latest export
+#   just create-dmg archive/export-*/QuickRecorder.app  # Use specific app
+create-dmg app_path="":
+    @chmod +x scripts/create-dmg.sh
+    @bash scripts/create-dmg.sh {{app_path}}
 
 # Build + archive + notarize (requires Apple ID credentials)
 # Supports: Keychain (secure), .env file, or environment variables
