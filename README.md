@@ -91,6 +91,3 @@ For the original upstream repository, please visit: [lihaoyun6/QuickRecorder](ht
 
 [Sentry](https://github.com/getsentry/sentry-cocoa) @getsentry
 > QuickRecorder uses Sentry for error tracking in development builds
-
-[ChatGPT](https://chat.openai.com) @OpenAI
-> Note: Part of the code in this project was generated or refactored using ChatGPT.
