@@ -1,12 +1,11 @@
 {
-  "originHash" : "6097b628df0906709733d15f1be90a8be5aa4aba83bd2ab4c72ecac8b69c9c65",
+  "originHash" : "ae30aac3babba9e16e1c505cca194b80c3f1c96aececca944f247bba6eb237a8",
   "pins" : [
     {
       "identity" : "aecaudiostream",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lihaoyun6/AECAudioStream.git",
       "state" : {
-        "branch" : "main",
         "revision" : "0eab971c1dd0420ee84646c71172dd66fa59117c"
       }
     },
@@ -17,6 +16,15 @@
       "state" : {
         "revision" : "7ecc38bb6edf7d087d30e737057b8d8a9b7f51eb",
         "version" : "2.2.4"
+      }
+    },
+    {
+      "identity" : "sentry-cocoa",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/getsentry/sentry-cocoa/",
+      "state" : {
+        "revision" : "16cd512711375fa73f25ae5e373f596bdf4251ae",
+        "version" : "8.58.0"
       }
     },
     {
