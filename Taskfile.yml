@@ -240,6 +240,8 @@ tasks:
 
   create-dmg:
     desc: Create DMG from app (auto-finds latest export or use CLI_ARGS)
+    deps:
+      - archive
     cmds:
       - chmod +x scripts/create-dmg.sh
       - cmd: bash scripts/create-dmg.sh {{.CLI_ARGS}}
@@ -290,6 +292,8 @@ tasks:
 
   update-homebrew:
     desc: Update Homebrew cask with latest DMG (auto-detects version and file)
+    deps:
+      - create-dmg
     cmds:
       - echo "🍺 Updating Homebrew cask..."
       - chmod +x scripts/update-homebrew-cask.sh

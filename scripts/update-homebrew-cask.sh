@@ -110,6 +110,29 @@ if ! grep -q "releases/download/v#{version}" "$CASK_FILE"; then
     sed -i '' "s|url \".*\"|url \"${DMG_URL}\"|" "$CASK_FILE"
 fi
 
+# Fix app directive - remove incorrect target or appdir settings
+# Homebrew automatically installs to /Applications when installing from DMG
+# Check if app directive has target parameter (incorrect)
+if grep -q 'app "QuickRecorder.app", target:' "$CASK_FILE"; then
+    log_info "Fixing app directive (removing incorrect target parameter)..."
+    sed -i '' 's/app "QuickRecorder.app", target:.*/app "QuickRecorder.app"/' "$CASK_FILE"
+fi
+
+# Check if appdir directive exists (should not be needed for DMG)
+if grep -q '^[[:space:]]*appdir' "$CASK_FILE"; then
+    log_info "Removing appdir directive (not needed for DMG installation)..."
+    sed -i '' '/^[[:space:]]*appdir/d' "$CASK_FILE"
+fi
+
+# Ensure app directive exists and is correct
+if ! grep -q 'app "QuickRecorder.app"' "$CASK_FILE"; then
+    log_info "Adding app directive..."
+    # Find the line after url and add app directive
+    sed -i '' '/^[[:space:]]*url/a\
+\ \ app "QuickRecorder.app"
+' "$CASK_FILE"
+fi
+
 log_success "Cask file updated"
 
 # Show diff
