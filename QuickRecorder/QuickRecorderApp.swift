@@ -457,6 +457,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        #if DEBUG
+        // Sentry is only enabled in Debug builds for development error tracking
         SentrySDK.start { options in
             options.dsn = "https://87ab51cd973b23206c9504c3dc85ae18@o4510738128502784.ingest.us.sentry.io/4510738131255296"
 
@@ -483,6 +485,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         }
         // Remove the next line after confirming that your Sentry integration is working.
         SentrySDK.capture(message: "This app uses Sentry! :)")
+        #endif
 
         closeAllWindow()
         if showOnDock { _ = applicationShouldHandleReopen(NSApp, hasVisibleWindows: true) }

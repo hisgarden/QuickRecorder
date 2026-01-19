@@ -6,12 +6,19 @@
 # This script creates a GitHub release using the GitHub CLI (gh)
 #
 # Usage:
-#   ./scripts/create-gh-release.sh [version] [zip_path]
+#   ./scripts/create-gh-release.sh [--force] [version] [dmg_or_zip_path]
 #
 # Examples:
-#   ./scripts/create-gh-release.sh 1.7.0 releases/QuickRecorder-1.7.0.zip
-#   ./scripts/create-gh-release.sh 1.7.0  # Auto-find zip file
-#   ./scripts/create-gh-release.sh         # Auto-detect version and zip
+#   ./scripts/create-gh-release.sh 1.7.0 QuickRecorder.dmg
+#   ./scripts/create-gh-release.sh 1.7.0  # Auto-find DMG or ZIP file
+#   ./scripts/create-gh-release.sh         # Auto-detect version and file
+#   ./scripts/create-gh-release.sh --force 1.7.1  # Overwrite existing release
+#
+# Options:
+#   --force, -f    Delete existing release if tag already exists
+#
+# Note: If a release with the same tag already exists, you'll be prompted
+#       to delete it before creating a new one (unless --force is used).
 #
 # Requirements:
 #   - GitHub CLI (gh): brew install gh
@@ -28,8 +35,27 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default values
-VERSION="${1:-}"
-ZIP_PATH="${2:-}"
+FORCE_OVERWRITE=false
+VERSION=""
+ZIP_PATH=""
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --force|-f)
+            FORCE_OVERWRITE=true
+            shift
+            ;;
+        *)
+            if [ -z "$VERSION" ]; then
+                VERSION="$1"
+            elif [ -z "$ZIP_PATH" ]; then
+                ZIP_PATH="$1"
+            fi
+            shift
+            ;;
+    esac
+done
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RELEASES_DIR="${REPO_DIR}/releases"
 ARCHIVE_DIR="${REPO_DIR}/archive"
@@ -114,16 +140,38 @@ get_current_version() {
 # File Detection
 # -----------------------------------------------------------------------------
 
-find_release_zip() {
+find_release_file() {
     local version="$1"
-    local patterns=(
+    
+    # Prioritize DMG files over ZIP files, and prefer latest/most recent files
+    # Check for version-specific DMG first
+    local dmg_patterns=(
+        "${REPO_DIR}/QuickRecorder.dmg"
+        "${RELEASES_DIR}/QuickRecorder-${version}.dmg"
+        "${ARCHIVE_DIR}/QuickRecorder-${version}.dmg"
+        "${RELEASES_DIR}/QuickRecorder-*.dmg"
+        "${ARCHIVE_DIR}/QuickRecorder-*.dmg"
+    )
+    
+    # Check for ZIP files as fallback
+    local zip_patterns=(
         "${RELEASES_DIR}/QuickRecorder-${version}.zip"
         "${ARCHIVE_DIR}/QuickRecorder-${version}.zip"
         "${RELEASES_DIR}/QuickRecorder-*.zip"
         "${ARCHIVE_DIR}/QuickRecorder-*.zip"
     )
 
-    for pattern in "${patterns[@]}"; do
+    # Try DMG files first (prioritize DMG)
+    for pattern in "${dmg_patterns[@]}"; do
+        local file=$(ls -t $pattern 2>/dev/null | head -1)
+        if [ -n "$file" ] && [ -f "$file" ]; then
+            echo "$file"
+            return 0
+        fi
+    done
+    
+    # Fallback to ZIP files if no DMG found
+    for pattern in "${zip_patterns[@]}"; do
         local file=$(ls -t $pattern 2>/dev/null | head -1)
         if [ -n "$file" ] && [ -f "$file" ]; then
             echo "$file"
@@ -134,23 +182,24 @@ find_release_zip() {
     return 1
 }
 
-get_zip_path() {
+get_release_file() {
     local version="$1"
-    local zip_path=""
+    local file_path=""
 
     if [ -n "$ZIP_PATH" ]; then
-        zip_path="$ZIP_PATH"
+        file_path="$ZIP_PATH"
     else
-        zip_path=$(find_release_zip "$version")
+        file_path=$(find_release_file "$version")
     fi
 
-    if [ -z "$zip_path" ] || [ ! -f "$zip_path" ]; then
-        log_error "Could not find ZIP file for version ${version}"
-        log_info "Please provide ZIP path: $0 ${version} releases/QuickRecorder-${version}.zip"
+    if [ -z "$file_path" ] || [ ! -f "$file_path" ]; then
+        log_error "Could not find release file (DMG or ZIP) for version ${version}"
+        log_info "Please provide file path: $0 ${version} QuickRecorder.dmg"
+        log_info "Or create DMG first: task create-dmg"
         exit 1
     fi
 
-    echo "$zip_path"
+    echo "$file_path"
 }
 
 # -----------------------------------------------------------------------------
@@ -193,10 +242,11 @@ This is the first officially notarized release of QuickRecorder, ready for secur
 
 ### 📥 Installation
 
-1. Download \`QuickRecorder-${version}.zip\`
-2. Unzip the file
-3. **Important:** Right-click on \`QuickRecorder.app\` → Select "Open" → Click "Open" in the dialog
-4. Or move to Applications and use: \`xattr -d com.apple.quarantine QuickRecorder.app\`
+1. Download \`QuickRecorder-${version}.dmg\` (or \`.zip\`)
+2. Open the DMG file (or unzip if using ZIP)
+3. Drag \`QuickRecorder.app\` to your Applications folder
+4. **Important:** On first launch, right-click on \`QuickRecorder.app\` → Select "Open" → Click "Open" in the dialog
+5. Or use: \`xattr -d com.apple.quarantine QuickRecorder.app\`
 
 > **Note:** macOS may show "Apple could not verify" on first launch. This is normal for apps distributed outside the Mac App Store. Use **Right-click → Open** to bypass this.
 
@@ -224,24 +274,62 @@ main() {
     VERSION=$(get_current_version)
     log_info "Version: ${VERSION}"
 
-    # Step 3: Get ZIP path
-    ZIP_PATH=$(get_zip_path "$VERSION")
-    log_info "ZIP file: ${ZIP_PATH}"
-    local zip_size=$(du -h "$ZIP_PATH" | cut -f1)
-    log_info "Size: ${zip_size}"
+    # Step 3: Get release file (DMG or ZIP)
+    RELEASE_FILE=$(get_release_file "$VERSION")
+    log_info "Release file: ${RELEASE_FILE}"
+    local file_size=$(du -h "$RELEASE_FILE" | cut -f1)
+    log_info "Size: ${file_size}"
 
     # Step 4: Generate release notes
     log_info "Generating release notes..."
     RELEASE_NOTES=$(generate_release_notes "$VERSION")
 
-    # Step 5: Create release
+    # Step 5: Check if release already exists
     local tag="v${VERSION}"
+    if gh release view "$tag" --repo hisgarden/QuickRecorder &>/dev/null; then
+        log_warning "Release ${tag} already exists"
+        
+        if [ "$FORCE_OVERWRITE" = true ]; then
+            log_info "Force overwrite enabled - deleting existing release: ${tag}"
+            gh release delete "$tag" --repo hisgarden/QuickRecorder --yes || {
+                log_error "Failed to delete existing release"
+                exit 1
+            }
+            log_success "Deleted existing release"
+        else
+            echo ""
+            echo "Options:"
+            echo "  1. Delete existing release and create new one"
+            echo "  2. Skip (keep existing release)"
+            echo ""
+            read -p "Delete existing release? (y/N): " -n 1 -r
+            echo ""
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                log_info "Deleting existing release: ${tag}"
+                gh release delete "$tag" --repo hisgarden/QuickRecorder --yes || {
+                    log_error "Failed to delete existing release"
+                    exit 1
+                }
+                log_success "Deleted existing release"
+            else
+                log_info "Skipping - keeping existing release"
+                echo ""
+                echo "To overwrite, use: $0 --force ${VERSION}"
+                echo ""
+                echo "Release URL:"
+                echo "  https://github.com/hisgarden/QuickRecorder/releases/tag/${tag}"
+                exit 0
+            fi
+        fi
+    fi
+
+    # Step 6: Create release
     log_info "Creating GitHub release: ${tag}"
     echo ""
 
     # Create release with gh CLI
     echo "$RELEASE_NOTES" | gh release create "$tag" \
-        "$ZIP_PATH" \
+        "$RELEASE_FILE" \
         --title "Version ${VERSION}" \
         --notes-file - \
         --repo hisgarden/QuickRecorder
