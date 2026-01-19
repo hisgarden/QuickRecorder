@@ -42,6 +42,9 @@ tasks:
       - echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       - echo "    task archive            Create .xcarchive (auto-runs release)"
       - echo "    task export-app         Export .app to Desktop"
+      - echo "    task create-dmg         Create DMG from app (auto-finds latest export)"
+      - echo "    task gh-release         Create GitHub release with DMG/ZIP"
+      - echo "    task update-homebrew    Update Homebrew cask with latest DMG"
       - echo "    task notarize           Build, archive, notarize (auto-runs deps)"
       - echo "    task staple             Staple notarization ticket"
       - echo "    task appcast            Generate Sparkle appcast.xml for updates"
@@ -235,6 +238,13 @@ tasks:
             echo "❌ No release build found. Run 'task release' first."
           fi
 
+  create-dmg:
+    desc: Create DMG from app (auto-finds latest export or use CLI_ARGS)
+    cmds:
+      - chmod +x scripts/create-dmg.sh
+      - cmd: bash scripts/create-dmg.sh {{.CLI_ARGS}}
+        ignore_error: false
+
   notarize:
     desc: Build, archive, and notarize
     deps:
@@ -257,6 +267,30 @@ tasks:
       - echo "📡 Generating appcast..."
       - cmd: chmod +x scripts/generate-appcast.sh && ./scripts/generate-appcast.sh {{.CLI_ARGS}}
         ignore_error: true
+
+  gh-release:
+    desc: Create GitHub release with DMG/ZIP (auto-finds latest file or use CLI_ARGS)
+    cmds:
+      - echo "🚀 Creating GitHub Release..."
+      - chmod +x scripts/create-gh-release.sh
+      - cmd: bash scripts/create-gh-release.sh {{.CLI_ARGS}}
+        ignore_error: false
+
+  gh-release-force:
+    desc: Create GitHub release (force overwrite if tag exists)
+    cmds:
+      - echo "🚀 Creating GitHub Release (force overwrite)..."
+      - chmod +x scripts/create-gh-release.sh
+      - cmd: bash scripts/create-gh-release.sh --force {{.CLI_ARGS}}
+        ignore_error: false
+
+  update-homebrew:
+    desc: Update Homebrew cask with latest DMG (auto-detects version and file)
+    cmds:
+      - echo "🍺 Updating Homebrew cask..."
+      - chmod +x scripts/update-homebrew-cask.sh
+      - cmd: bash scripts/update-homebrew-cask.sh {{.CLI_ARGS}}
+        ignore_error: false
 
   publish:
     desc: Complete release workflow
