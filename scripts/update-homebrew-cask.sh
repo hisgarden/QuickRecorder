@@ -103,9 +103,12 @@ sed -i '' "s/version \".*\"/version \"${VERSION}\"/" "$CASK_FILE"
 # Update SHA256
 sed -i '' "s/sha256 \".*\"/sha256 \"${SHA256}\"/" "$CASK_FILE"
 
-# Update URL (if needed)
-DMG_URL="https://github.com/hisgarden/QuickRecorder/releases/download/v${VERSION}/QuickRecorder.dmg"
-sed -i '' "s|url \".*\"|url \"${DMG_URL}\"|" "$CASK_FILE"
+# Update URL (use template variable format)
+DMG_URL="https://github.com/hisgarden/QuickRecorder/releases/download/v#{version}/QuickRecorder.dmg"
+# Only update if URL pattern doesn't match (preserve template variables)
+if ! grep -q "releases/download/v#{version}" "$CASK_FILE"; then
+    sed -i '' "s|url \".*\"|url \"${DMG_URL}\"|" "$CASK_FILE"
+fi
 
 log_success "Cask file updated"
 
@@ -117,6 +120,9 @@ git diff "$CASK_FILE" || true
 read -p "Commit and push changes? (y/N): " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # Configure git to use GitHub no-reply email for this repo
+    git config user.email "hisgarden@users.noreply.github.com"
+    
     git add "$CASK_FILE"
     git commit -m "Update QuickRecorder to v${VERSION}"
     git push origin main
