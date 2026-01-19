@@ -104,3 +104,4 @@ logs/
 # Most scripts are tracked, but sensitive ones are excluded below
 scripts/credentials.sh
 scripts/build-settings.txt
+.sentryclirc

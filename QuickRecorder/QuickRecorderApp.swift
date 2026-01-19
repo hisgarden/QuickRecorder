@@ -6,6 +6,8 @@
 //
 
 import AVFAudio
+import Sentry
+
 import AVFoundation
 import AppKit
 import CoreMediaIO
@@ -58,6 +60,24 @@ struct QuickRecorderApp: App {
     //private let updaterController: SPUStandardUpdaterController
 
     init() {
+        // Prevent multiple instances - check BEFORE app initialization
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "dev.hisgarden.QuickRecorder"
+        let runningApps = NSWorkspace.shared.runningApplications.filter {
+            $0.bundleIdentifier == bundleIdentifier && $0.processIdentifier != ProcessInfo.processInfo.processIdentifier
+        }
+        
+        if !runningApps.isEmpty {
+            // Another instance is already running - activate it and quit this one
+            if let existingApp = runningApps.first {
+                existingApp.activate(options: [.activateIgnoringOtherApps])
+            }
+            // Terminate immediately without showing UI
+            DispatchQueue.main.async {
+                NSApp.terminate(nil)
+            }
+            // Still initialize updater to avoid crashes, but app will terminate
+        }
+        
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
         updaterController = SPUStandardUpdaterController(
@@ -244,17 +264,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
             }
         }
 
-        let process = NSWorkspace.shared.runningApplications.filter({
-            $0.bundleIdentifier == "dev.hisgarden.QuickRecorder"
+        // Additional safety check - should not be needed if init() works correctly
+        // but kept as a fallback in case app was launched in an unusual way
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "dev.hisgarden.QuickRecorder"
+        let otherInstances = NSWorkspace.shared.runningApplications.filter({
+            $0.bundleIdentifier == bundleIdentifier && $0.processIdentifier != ProcessInfo.processInfo.processIdentifier
         })
-        if process.count > 1 {
-            DispatchQueue.main.async {
-                let button = createAlert(
-                    title: "QuickRecorder is Running".local,
-                    message: "Please do not run multiple instances!".local, button1: "Quit".local
-                ).runModal()
-                if button == .alertFirstButtonReturn { NSApp.terminate(self) }
+        if !otherInstances.isEmpty {
+            // Activate existing instance and terminate this one
+            if let existingApp = otherInstances.first {
+                existingApp.activate(options: [.activateIgnoringOtherApps])
             }
+            DispatchQueue.main.async {
+                NSApp.terminate(nil)
+            }
+            return
         }
 
         lazy var userDesktop =
@@ -433,6 +457,33 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        SentrySDK.start { options in
+            options.dsn = "https://87ab51cd973b23206c9504c3dc85ae18@o4510738128502784.ingest.us.sentry.io/4510738131255296"
+
+            // Adds IP for users.
+            // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+            options.sendDefaultPii = true
+
+            // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+            // We recommend adjusting this value in production.
+            options.tracesSampleRate = 1.0
+
+            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+            options.configureProfiling = {
+                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
+                $0.lifecycle = .trace
+            }
+
+            // Uncomment the following lines to add more data to your events
+            // options.attachScreenshot = true // This adds a screenshot to the error events
+            // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
+            
+            // Enable experimental logging features
+            options.experimental.enableLogs = true
+        }
+        // Remove the next line after confirming that your Sentry integration is working.
+        SentrySDK.capture(message: "This app uses Sentry! :)")
+
         closeAllWindow()
         if showOnDock { _ = applicationShouldHandleReopen(NSApp, hasVisibleWindows: true) }
         tips(

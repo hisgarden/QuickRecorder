@@ -66,7 +66,18 @@ class SCContext {
         // Use preflight check first (SOLUTION 4)
         if !CGPreflightScreenCaptureAccess() {
             // Trigger the system dialog by making the actual request
+            // Note: This shows a system modal dialog that will close automatically
+            // when user clicks "Open System Settings" - macOS handles this
             CGRequestScreenCaptureAccess()
+            
+            // Give macOS a moment to process the dialog interaction
+            // The system dialog should close automatically when System Settings opens
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                updateAvailableContentWithMonitoring { content in
+                    completion(content != nil)
+                }
+            }
+            return
         }
 
         updateAvailableContentWithMonitoring { content in
@@ -386,18 +397,39 @@ class SCContext {
                 button2: "Quit"
             )
 
-            if alert.runModal() == .alertFirstButtonReturn {
-                // Open System Settings
-                NSWorkspace.shared.open(
-                    URL(
-                        string:
-                            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-                    )!)
+            // Use beginSheetModal to allow non-blocking behavior
+            // This allows the dialog to close immediately after opening System Settings
+            if let window = NSApp.mainWindow ?? NSApp.windows.first {
+                alert.beginSheetModal(for: window) { response in
+                    if response == .alertFirstButtonReturn {
+                        // Open System Settings
+                        NSWorkspace.shared.open(
+                            URL(
+                                string:
+                                    "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+                            )!)
 
-                // Start monitoring for permission changes
-                monitorPermissionAndRestart()
+                        // Start monitoring for permission changes
+                        monitorPermissionAndRestart()
+                    } else {
+                        NSApp.terminate(self)
+                    }
+                }
             } else {
-                NSApp.terminate(self)
+                // Fallback to modal if no window available
+                if alert.runModal() == .alertFirstButtonReturn {
+                    // Open System Settings
+                    NSWorkspace.shared.open(
+                        URL(
+                            string:
+                                "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+                        )!)
+
+                    // Start monitoring for permission changes
+                    monitorPermissionAndRestart()
+                } else {
+                    NSApp.terminate(self)
+                }
             }
         }
     }
