@@ -33,3 +33,32 @@ Project diagnostic resolution patterns for IDE/editor tooling.
 2. Remove any invalid top-level properties. Valid Taskfile v3 top-level properties:
    `version`, `dotenv`, `env`, `includes`, `interval`, `method`, `output`, `run`, `set`, `shopt`, `silent`, `tasks`, `vars`
 
+
+
+## File Changelog Convention
+
+**Rule**: All `Taskfile.yml` and `*.sh` scripts must include a changelog block at the end of the file.
+
+**Format** (shell scripts and Taskfile.yml):
+```
+################################################################################
+# Changelog:
+# YYYY-MM-DD  Brief description of change
+# YYYY-MM-DD  Another change (most recent first)
+################################################################################
+```
+
+For YAML files (Taskfile.yml), use `#` comment prefix:
+```yaml
+# ##############################################################################
+# Changelog:
+# YYYY-MM-DD  Brief description of change
+# ##############################################################################
+```
+
+**Rules**:
+- Most recent entry first (reverse chronological)
+- One line per change, date + 2-space gap + description
+- Keep descriptions concise (< 80 chars)
+- Add an entry for every commit that modifies the file
+
