@@ -265,7 +265,7 @@ just notarize
 
 ---
 
-- [ ] U4. **Remove `APP_SPECIFIC_PASSWORD` emissions from `.env.sample`, `Justfile`, and delete dead credential-shim scripts**
+- [x] U4. **Remove `APP_SPECIFIC_PASSWORD` emissions from `.env.sample`, `Justfile`, and delete dead credential-shim scripts**
 
 **Goal:** No tracked file emits, samples, or documents `APP_SPECIFIC_PASSWORD` as an environment variable.
 
