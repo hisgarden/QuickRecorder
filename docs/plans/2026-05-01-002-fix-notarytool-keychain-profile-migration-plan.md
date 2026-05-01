@@ -297,7 +297,7 @@ just notarize
 
 ---
 
-- [ ] U5. **Update tracked docs to reflect keychain-profile-only flow; placeholder-swap `STAPLING_GUIDE.md`**
+- [x] U5. **Update tracked docs to reflect keychain-profile-only flow; placeholder-swap `STAPLING_GUIDE.md`**
 
 **Goal:** All tracked notarization docs describe only the keychain-profile flow. The leaking inline credential in `scripts/STAPLING_GUIDE.md` is replaced with a `--keychain-profile QuickRecorder-notarize` placeholder example.
 
