@@ -1,9 +1,10 @@
 ---
 title: "Migrate notarization to notarytool keychain-profile; remove APP_SPECIFIC_PASSWORD env var"
 type: fix
-status: active
+status: completed
 date: 2026-05-01
 origin: docs/audits/2026-05-01-owasp.md
+verified: 2026-05-01 (submission b36d9ce9-e487-4893-8a2e-92e4b5c142a8 Accepted)
 ---
 
 # Migrate notarization to notarytool keychain-profile; remove `APP_SPECIFIC_PASSWORD` env var
@@ -340,7 +341,7 @@ just notarize
 
 ---
 
-- [ ] U6. **End-to-end verification: rotate, set up, notarize**
+- [x] U6. **End-to-end verification: rotate, set up, notarize**
 
 **Goal:** A real notarization run completes successfully under the new flow, proving every other unit's correctness on a real Apple submission. This unit also serves as the gate that rotation has happened.
 
