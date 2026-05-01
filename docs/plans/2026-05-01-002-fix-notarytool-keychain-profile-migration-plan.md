@@ -200,7 +200,7 @@ just notarize
 
 ---
 
-- [ ] U2. **Migrate `scripts/notarize.sh` to `--keychain-profile`**
+- [x] U2. **Migrate `scripts/notarize.sh` to `--keychain-profile`**
 
 **Goal:** All `xcrun notarytool` invocations in `notarize.sh` use `--keychain-profile "QuickRecorder-notarize"`. The script no longer reads `APP_SPECIFIC_PASSWORD` or sources `credentials.sh`.
 
