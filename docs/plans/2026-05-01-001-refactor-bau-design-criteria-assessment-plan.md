@@ -168,7 +168,7 @@ Consolidated summary structure:
 
 ## Implementation Units
 
-- U1. **SOLID assessment**
+- [x] U1. **SOLID assessment**
 
 **Goal:** Produce `docs/audits/2026-05-01-solid.md` enumerating SRP/OCP/LSP/ISP/DIP findings, with focus on the largest/most-coupled files first.
 
@@ -197,7 +197,7 @@ Consolidated summary structure:
 
 ---
 
-- U2. **OWASP assessment**
+- [x] U2. **OWASP assessment**
 
 **Goal:** Produce `docs/audits/2026-05-01-owasp.md` covering input handling, AppleScript execution, credential storage, file I/O, IPC, and update channel (Sparkle).
 
@@ -229,7 +229,7 @@ Consolidated summary structure:
 
 ---
 
-- U3. **TDD assessment**
+- [x] U3. **TDD assessment**
 
 **Goal:** Produce `docs/audits/2026-05-01-tdd.md` quantifying coverage by surface and listing the highest-value test gaps.
 
@@ -259,7 +259,7 @@ Consolidated summary structure:
 
 ---
 
-- U4. **Formatting + changelog convention assessment**
+- [x] U4. **Formatting + changelog convention assessment**
 
 **Goal:** Produce `docs/audits/2026-05-01-formatting-and-changelog.md` enumerating: (a) AsciiDoc files violating the heading/bullet blank-line rule (likely none — quick check), (b) `*.sh` files and `Taskfile.yml`/`Justfile` missing the changelog block.
 
@@ -289,7 +289,7 @@ Consolidated summary structure:
 
 ---
 
-- U5. **LNT + sensitive-file protection assessment**
+- [x] U5. **LNT + sensitive-file protection assessment**
 
 **Goal:** Produce `docs/audits/2026-05-01-lnt-and-sensitive-files.md` covering: (a) which LNT categories actually apply to this macOS desktop app and how they fare, (b) `.gitignore` coverage of CLAUDE.md sensitive-file patterns, (c) whether any tracked file currently matches a sensitive pattern.
 
@@ -323,7 +323,7 @@ Consolidated summary structure:
 
 ---
 
-- U6. **Consolidated summary + prioritized backlog**
+- [x] U6. **Consolidated summary + prioritized backlog**
 
 **Goal:** Produce `docs/audits/2026-05-01-bau-assessment.md` rolling up U1-U5 with an executive read and a prioritized remediation backlog.
 

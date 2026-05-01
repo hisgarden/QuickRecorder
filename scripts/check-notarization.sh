@@ -1,8 +1,12 @@
 #!/bin/bash
-# Check detailed notarization errors
+# Check detailed notarization errors via Keychain profile
 # Usage: bash scripts/check-notarization.sh SUBMISSION_ID
 
-if [ -z "$1" ]; then
+set -euo pipefail
+
+KEYCHAIN_PROFILE="QuickRecorder-notarize"
+
+if [ -z "${1:-}" ]; then
     echo "Usage: bash scripts/check-notarization.sh SUBMISSION_ID"
     echo ""
     echo "Get submission ID from notarization.json:"
@@ -12,47 +16,19 @@ fi
 
 SUBMISSION_ID="$1"
 
-# Load credentials from .env if available
-if [ -f ".env" ]; then
-    set -a
-    source .env 2>/dev/null || true
-    set +a
-fi
-
-# Check if we have credentials
-if [ -z "$APPLE_ID" ]; then
-    echo "❌ APPLE_ID not found"
-    echo "Please set APPLE_ID in .env or environment"
+# Verify the keychain profile exists. notarytool stores it via
+# `xcrun notarytool store-credentials` -- run `--setup-keychain` first.
+if ! xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" >/dev/null 2>&1; then
+    echo "❌ Keychain profile '$KEYCHAIN_PROFILE' not found."
+    echo "Run: ./scripts/buildRelease.sh --setup-keychain"
     exit 1
 fi
 
-if [ -z "$APP_SPECIFIC_PASSWORD" ]; then
-    echo "❌ APP_SPECIFIC_PASSWORD not found"
-    echo "Please set APP_SPECIFIC_PASSWORD in .env or environment"
-    exit 1
-fi
-
-TEAM_ID="${APPLE_TEAM_ID:-}"
-
-echo "🔍 Checking notarization errors..."
+echo "🔍 Checking notarization log..."
 echo "   Submission: $SUBMISSION_ID"
-echo "   Apple ID: $APPLE_ID"
-[ -n "$TEAM_ID" ] && echo "   Team ID: $TEAM_ID"
+echo "   Profile:    $KEYCHAIN_PROFILE"
 echo ""
 
-# Fetch the log
-if [ -n "$TEAM_ID" ]; then
-    xcrun notarytool log "$SUBMISSION_ID" \
-        --apple-id "$APPLE_ID" \
-        --password "$APP_SPECIFIC_PASSWORD" \
-        --team-id "$TEAM_ID" 2>&1
-else
-    xcrun notarytool log "$SUBMISSION_ID" \
-        --apple-id "$APPLE_ID" \
-        --password "$APP_SPECIFIC_PASSWORD" 2>&1
-fi
-
-
-
-
-
+# Fetch the log -- macOS Keychain prompts for Touch ID / passcode on access.
+xcrun notarytool log "$SUBMISSION_ID" \
+    --keychain-profile "$KEYCHAIN_PROFILE" 2>&1

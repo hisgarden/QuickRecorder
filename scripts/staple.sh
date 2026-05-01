@@ -75,7 +75,7 @@ main() {
         echo "Solutions:"
         echo "  1. Wait a moment and try again: just staple"
         echo "  2. Check notarization status:"
-        echo "     xcrun notarytool history --apple-id <email> --password <password>"
+        echo "     xcrun notarytool history --keychain-profile QuickRecorder-notarize"
         echo "  3. Create a new submission: just notarize"
         exit 1
     fi
