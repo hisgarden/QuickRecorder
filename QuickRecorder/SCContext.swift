@@ -482,6 +482,8 @@ class SCContext {
 
     // SOLUTION 3: Improved user-facing permission dialog with restart instructions
     private static func requestPermissions() {
+        // Skip during test execution: a modal alert in the test host blocks the test runner
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
         DispatchQueue.main.async {
             let alert = createAlert(
                 title: "Permission Required",
