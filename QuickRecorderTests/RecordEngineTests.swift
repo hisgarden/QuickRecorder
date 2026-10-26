@@ -224,3 +224,16 @@ final class RecordEngineTests: XCTestCase {
         XCTAssertEqual(AudioQuality.extreme.rawValue, 320)
     }
 }
+
+// MARK: - Frame Rate Default
+
+final class FrameRateDefaultTests: XCTestCase {
+
+    func testFrameRate_WhenUnset_DefaultsTo30() {
+        let saved = ud.object(forKey: "frameRate")
+        ud.removeObject(forKey: "frameRate")
+        defer { if let saved { ud.set(saved, forKey: "frameRate") } }
+
+        XCTAssertEqual(ud.integer(forKey: "frameRate"), 30)
+    }
+}

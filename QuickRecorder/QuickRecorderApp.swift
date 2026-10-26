@@ -24,6 +24,7 @@ let isMacOS15 = ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 1
 var scPerm = false
 let fd = FileManager.default
 let ud = UserDefaults.standard
+let defaultFrameRate = 30
 var statusBarItem: NSStatusItem!
 var mouseMonitor: Any?
 var keyMonitor: Any?
@@ -177,7 +178,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     @AppStorage("showPreview") var showPreview: Bool = true
     @AppStorage("background") var background: BackgroundType = .wallpaper
     @AppStorage("showMouse") var showMouse: Bool = true
-    @AppStorage("frameRate") var frameRate: Int = 60
+    @AppStorage("frameRate") var frameRate: Int = defaultFrameRate
     @AppStorage("videoQuality") var videoQuality: Double = 1.0
     @AppStorage("videoFormat") var videoFormat: VideoFormat = .mp4
     @AppStorage("audioFormat") var audioFormat: AudioFormat = .aac
@@ -300,7 +301,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
                 "audioFormat": AudioFormat.aac.rawValue,
                 "audioQuality": AudioQuality.high.rawValue,
                 "background": BackgroundType.wallpaper.rawValue,
-                "frameRate": 60,
+                "frameRate": defaultFrameRate,
                 "highRes": 2,
                 "hideSelf": true,
                 "highlightMouse": false,

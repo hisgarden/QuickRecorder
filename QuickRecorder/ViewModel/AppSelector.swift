@@ -203,7 +203,7 @@ class AppSelectorViewModel: ObservableObject {
 struct OptionsView: View {
     @State private var micList = SCContext.getMicrophone()
     
-    @AppStorage("frameRate")      private var frameRate: Int = 60
+    @AppStorage("frameRate")      private var frameRate: Int = defaultFrameRate
     @AppStorage("videoQuality")   private var videoQuality: Double = 1.0
     @AppStorage("saveDirectory")  private var saveDirectory: String?
     @AppStorage("hideSelf")       private var hideSelf: Bool = false
