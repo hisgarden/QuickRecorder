@@ -265,9 +265,20 @@ create-dmg app_path="":
     @chmod +x scripts/create-dmg.sh
     @bash scripts/create-dmg.sh {{app_path}}
 
-# Build + archive + notarize (requires Apple ID credentials)
-# Supports: Keychain (secure), .env file, or environment variables
+# Build + archive + notarize via macOS Keychain (Touch ID prompt)
+# One-time setup: ./scripts/buildRelease.sh --setup-keychain
 notarize:
+    @if ! xcrun notarytool history --keychain-profile QuickRecorder-notarize >/dev/null 2>&1; then \
+        echo "⚠️  Keychain profile 'QuickRecorder-notarize' not found."; \
+        echo ""; \
+        echo "Run one-time setup:"; \
+        echo "  ./scripts/buildRelease.sh --setup-keychain"; \
+        echo ""; \
+        echo "This stores your Apple ID + Team ID + App-Specific Password in"; \
+        echo "macOS Keychain via 'xcrun notarytool store-credentials'."; \
+        echo "Touch ID / passcode prompts on every notarization."; \
+        exit 1; \
+    fi
     @bash scripts/notarize.sh
 
 # Staple notarization ticket to app (after notarization is approved)

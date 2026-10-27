@@ -6,24 +6,20 @@
 #  Usage:
 #    ./buildRelease.sh              # Release build
 #    ./buildRelease.sh --archive    # Build + archive (Xcode Organizer)
-#    ./buildRelease.sh --notarize   # Build + archive + notarize (secure: Keychain + Touch ID)
+#    ./buildRelease.sh --notarize   # Build + archive + notarize via Keychain (Touch ID prompt)
 #    ./buildRelease.sh --export     # Build + export .app to Desktop
 #
-#  Secure Notarization Setup:
-#    1. Create App-Specific Password at: https://appleid.apple.com/account/manage
-#    2. Store in Keychain:
-#       security add-internet-password \
-#         -s "hisgarden" \
-#         -a "your@email.com" \
-#         -w "xxxx-xxxx-xxxx-xxxx" \
-#         -T "/Applications/Xcode.app/Contents/Applications/Application Loader.app"
-#    3. Run with --secure flag:
-#       ./buildRelease.sh --notarize --secure
+#  One-time setup (per machine):
+#    ./buildRelease.sh --setup-keychain
+#      Stores Apple ID + Team ID + App-Specific Password in macOS Keychain via
+#      `xcrun notarytool store-credentials` under profile QuickRecorder-notarize.
+#      Touch ID / passcode prompts on every subsequent notarytool access.
 #
 #  Requirements:
-#    - XcodeGen must be installed
-#    - Xcode project must be generated
-#    - For notarization: Apple Developer account
+#    - XcodeGen installed
+#    - Xcode project generated
+#    - Xcode 13+ (for `xcrun notarytool`)
+#    - Apple Developer account (for notarization)
 #
 
 set -e
@@ -39,73 +35,63 @@ NC='\033[0m'
 PROJECT_NAME="QuickRecorder"
 BUILD_DIR="build"
 RELEASE_DIR="release"
+KEYCHAIN_PROFILE="QuickRecorder-notarize"
 
 # =============================================================================
-# Secure Credential Functions (Keychain + Touch ID/Watch)
+# Keychain Profile Setup (notarytool-native)
 # =============================================================================
 
-# Get Apple ID from Keychain securely
-get_apple_id() {
-    if [ "$SECURE" = true ]; then
-        security find-internet-password -s "hisgarden" -a "appleid" -g 2>/dev/null | \
-        grep "acct" | sed 's/.*"\(.*\)".*/\1/'
-    else
-        echo "$APPLE_ID"
-    fi
-}
-
-# Get App-Specific Password from Keychain securely (prompts Touch ID/Apple Watch)
-get_app_password() {
-    if [ "$SECURE" = true ]; then
-        # This command will prompt with Touch ID or Apple Watch
-        # The -T flag specifies trusted application, leaving empty allows system prompt
-        security find-internet-password -s "hisgarden" -a "notarize" -w 2>/dev/null
-    else
-        echo "$APPLE_ID_PASSWORD"
-    fi
-}
-
-# Setup Keychain credentials (run once)
+# Store Apple ID + Team ID + App-Specific Password in macOS Keychain via
+# `xcrun notarytool store-credentials`. Run once per machine. Touch ID /
+# passcode is prompted by macOS on every subsequent notarytool access; the
+# password value never enters shell variable scope.
 setup_keychain() {
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}🔐 Secure Keychain Setup${NC}"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
-    
-    echo "This will store your Apple ID and app-specific password in Keychain."
-    echo "Access will require Touch ID or Apple Watch approval.\n"
-    
-    read -p "Enter your Apple ID email: " APPLE_ID_INPUT
-    read -p "Enter your App-Specific Password: " APPLE_PASSWORD_INPUT
-    
+    echo -e "${BLUE}🔐 Keychain Profile Setup (${KEYCHAIN_PROFILE})${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
-    echo "Storing Apple ID in Keychain..."
-    security add-internet-password \
-        -s "hisgarden" \
-        -a "appleid" \
-        -r "http" \
-        -w "$APPLE_ID_INPUT" \
-        -T "" \
-        -U
-    
-    echo "Storing App-Specific Password in Keychain..."
-    security add-internet-password \
-        -s "hisgarden" \
-        -a "notarize" \
-        -r "http" \
-        -w "$APPLE_PASSWORD_INPUT" \
-        -T "" \
-        -U
-    
-    echo ""
-    echo -e "${GREEN}✓${NC} Credentials stored securely in Keychain!"
-    echo "You will be prompted with Touch ID or Apple Watch when notarizing."
-}
 
-# Check if Keychain credentials exist
-check_keychain_credentials() {
-    if [ "$SECURE" = true ]; then
-        security find-internet-password -s "hisgarden" -a "appleid" > /dev/null 2>&1 && \
-        security find-internet-password -s "hisgarden" -a "notarize" > /dev/null 2>&1
+    if ! xcrun notarytool --version >/dev/null 2>&1; then
+        echo -e "${RED}❌ xcrun notarytool not available. Requires Xcode 13+.${NC}"
+        exit 1
+    fi
+
+    # Read Apple ID + Team ID from .env if present, otherwise prompt.
+    if [ -f ".env" ]; then
+        # shellcheck disable=SC1091
+        source .env 2>/dev/null || true
+    fi
+
+    if [ -z "${APPLE_ID:-}" ]; then
+        read -p "Apple ID email: " APPLE_ID
+    else
+        echo "Apple ID:    $APPLE_ID  (from .env)"
+    fi
+
+    if [ -z "${APPLE_TEAM_ID:-}" ]; then
+        read -p "Apple Team ID (10-char alphanumeric): " APPLE_TEAM_ID
+    else
+        echo "Team ID:     $APPLE_TEAM_ID  (from .env)"
+    fi
+
+    echo ""
+    echo "notarytool will now prompt for your App-Specific Password and store"
+    echo "the credential bundle in macOS Keychain under profile:"
+    echo "  $KEYCHAIN_PROFILE"
+    echo ""
+    echo "Generate one at: https://appleid.apple.com/account/manage"
+    echo ""
+
+    if xcrun notarytool store-credentials "$KEYCHAIN_PROFILE" \
+        --apple-id "$APPLE_ID" \
+        --team-id "$APPLE_TEAM_ID"; then
+        echo ""
+        echo -e "${GREEN}✓${NC} Keychain profile '$KEYCHAIN_PROFILE' configured."
+        echo "Verify with: xcrun notarytool history --keychain-profile $KEYCHAIN_PROFILE"
+    else
+        echo ""
+        echo -e "${RED}❌ Failed to store credentials.${NC}"
+        exit 1
     fi
 }
 
@@ -117,7 +103,6 @@ check_keychain_credentials() {
 ARCHIVE=false
 NOTARIZE=false
 EXPORT=false
-SECURE=false
 VERBOSE=false
 
 while [[ $# -gt 0 ]]; do
@@ -129,10 +114,6 @@ while [[ $# -gt 0 ]]; do
         --notarize|-n)
             ARCHIVE=true
             NOTARIZE=true
-            shift
-            ;;
-        --secure|-s)
-            SECURE=true
             shift
             ;;
         --setup-keychain)
@@ -154,9 +135,8 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --archive, -a        Create archive (Xcode Organizer)"
-            echo "  --notarize, -n       Create archive + notarize"
-            echo "  --secure, -s         Use Keychain + Touch ID/Watch for credentials"
-            echo "  --setup-keychain     Setup secure Keychain credentials (run once)"
+            echo "  --notarize, -n       Create archive + notarize via Keychain (Touch ID prompt)"
+            echo "  --setup-keychain     One-time: store credentials in Keychain via notarytool"
             echo "  --export, -e         Export .app to Desktop"
             echo "  --verbose, -v        Verbose output"
             echo "  --help, -h           Show this help"
@@ -164,12 +144,13 @@ while [[ $# -gt 0 ]]; do
             echo "Examples:"
             echo "  $0                    # Release build only"
             echo "  $0 --archive          # Build + archive"
-            echo "  $0 --notarize --secure  # Full secure build + notarize"
+            echo "  $0 --notarize         # Build + archive + notarize (uses Keychain)"
             echo ""
-            echo "Secure Notarization (Recommended):"
+            echo "First-time setup:"
             echo "  1. Create App-Specific Password: https://appleid.apple.com/account/manage"
-            echo "  2. Setup Keychain: ./buildRelease.sh --setup-keychain"
-            echo "  3. Notarize: ./buildRelease.sh --notarize --secure"
+            echo "  2. Run: ./scripts/buildRelease.sh --setup-keychain"
+            echo "     Stores credentials in macOS Keychain under profile QuickRecorder-notarize"
+            echo "  3. From now on: ./scripts/buildRelease.sh --notarize"
             exit 0
             ;;
         *)
@@ -265,58 +246,21 @@ if [ "$ARCHIVE" = true ]; then
         exit 1
     fi
     
-    # Notarize if requested
+    # Notarize if requested -- delegate to scripts/notarize.sh, which uses
+    # the canonical xcrun notarytool + --keychain-profile flow.
     if [ "$NOTARIZE" = true ]; then
         echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo -e "${BLUE}🔏 Notarization${NC}"
+        echo -e "${BLUE}🔏 Notarization (via scripts/notarize.sh)${NC}"
         echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
-        
-        if [ "$SECURE" = true ]; then
-            # Secure mode: Use Keychain with Touch ID/Apple Watch
-            echo "🔐 Retrieving credentials from Keychain..."
-            echo "(You may be prompted for Touch ID or Apple Watch)\n"
-            
-            APPLE_ID=$(get_apple_id)
-            APPLE_ID_PASSWORD=$(get_app_password)
-            
-            if [ -z "$APPLE_ID" ] || [ -z "$APPLE_ID_PASSWORD" ]; then
-                echo -e "${RED}❌ Keychain credentials not found${NC}"
-                echo "Run './buildRelease.sh --setup-keychain' first to configure secure credentials."
-                exit 1
-            fi
-        else
-            # Standard mode: Use environment variables
-            if [ -z "$APPLE_ID" ] || [ -z "$APPLE_ID_PASSWORD" ]; then
-                echo -e "${RED}❌ APPLE_ID and APPLE_ID_PASSWORD environment variables required${NC}"
-                echo "Run with --secure flag to use Keychain, or set:"
-                echo "  export APPLE_ID=\"your@email.com\""
-                echo "  export APPLE_ID_PASSWORD=\"app-specific-password\""
-                exit 1
-            fi
+
+        if ! xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" >/dev/null 2>&1; then
+            echo -e "${RED}❌ Keychain profile '$KEYCHAIN_PROFILE' not found.${NC}"
+            echo "Run: ./scripts/buildRelease.sh --setup-keychain"
+            exit 1
         fi
-        
-        echo "📤 Submitting for notarization..."
-        xcrun altool --notarize-app \
-            --primary-bundle-id "dev.hisgarden.QuickRecorder" \
-            --username "$APPLE_ID" \
-            --password "$APPLE_ID_PASSWORD" \
-            --file "$ARCHIVE_PATH" \
-            --output-format json | tee archive/notarization.json
-        
-        REQUEST_UUID=$(cat archive/notarization.json | python3 -c "import sys, json; print(json.load(sys.stdin).get('requestUUID', ''))" 2>/dev/null || echo "")
-        
-        if [ -n "$REQUEST_UUID" ]; then
-            echo ""
-            echo -e "${GREEN}✓${NC} Notarization submitted successfully!"
-            echo "Request UUID: $REQUEST_UUID"
-            echo ""
-            echo "To check status:"
-            echo "  xcrun altool --notarization-info $REQUEST_UUID -u $APPLE_ID -p <password>"
-            echo ""
-            echo "After approval, staple the ticket:"
-            echo "  xcrun stapler staple $ARCHIVE_PATH"
-        else
-            echo -e "${RED}❌ Failed to get Request UUID${NC}"
+
+        if ! bash scripts/notarize.sh "$APP_PATH"; then
+            echo -e "${RED}❌ Notarization failed${NC}"
             exit 1
         fi
     fi
@@ -347,3 +291,9 @@ fi
 echo -e "\n${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  ✅ Build Complete!${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
+
+################################################################################
+# Changelog:
+# 2026-10-26  Add changelog block
+# 2026-05-01  --setup-keychain now runs notarytool store-credentials
+################################################################################

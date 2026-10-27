@@ -1,164 +1,95 @@
 #!/bin/bash
-# Complete notarization script for QuickRecorder
+# Complete notarization script for QuickRecorder.
+#
+# Credentials live in macOS Keychain under profile QuickRecorder-notarize,
+# stored once via `xcrun notarytool store-credentials`. macOS prompts for
+# Touch ID / passcode on every notarytool invocation; the App-Specific
+# Password value never enters this script's variable scope.
+#
+# One-time setup: ./scripts/buildRelease.sh --setup-keychain
 
-set -e
+set -euo pipefail
 
-# Get Apple ID from Keychain
-get_apple_id() {
-    security find-internet-password -s "hisgarden" -a "appleid" -g 2>/dev/null | \
-    grep "acct" | sed 's/.*"\(.*\)".*/\1/' || echo ""
-}
+KEYCHAIN_PROFILE="QuickRecorder-notarize"
 
-# Get App-Specific Password from Keychain (prompts Touch ID/Apple Watch)
-get_password() {
-    security find-internet-password -s "hisgarden" -a "notarize" -w 2>/dev/null || echo ""
-}
-
-# Get credentials from various sources
-get_credentials() {
-    local source=""
-    local apple_id=""
-    local password=""
-    
-    # Try Keychain first
-    apple_id=$(get_apple_id)
-    password=$(get_password)
-    
-    if [ -n "$apple_id" ] && [ -n "$password" ]; then
-        source="Keychain"
-        echo "$source|$apple_id|$password"
-        return 0
-    fi
-    
-    # Try .env file
-    if [ -f ".env" ]; then
-        set -a
-        # shellcheck disable=SC1091
-        source .env 2>/dev/null || true
-        set +a
-        
-        if [ -n "$APPLE_ID" ] && [ -n "$APP_SPECIFIC_PASSWORD" ]; then
-            source=".env file"
-            echo "$source|$APPLE_ID|$APP_SPECIFIC_PASSWORD"
-            return 0
-        fi
-    fi
-    
-    # Try environment variables
-    if [ -n "$APPLE_ID" ] && [ -n "$APP_SPECIFIC_PASSWORD" ]; then
-        source="environment variables"
-        echo "$source|$APPLE_ID|$APP_SPECIFIC_PASSWORD"
-        return 0
-    fi
-    
-    # No credentials found
-    echo "error|||"
-    return 1
-}
-
-# Verify notarytool is available
+# Verify notarytool is available (Xcode 13+).
 verify_notarytool() {
     if ! command -v xcrun &> /dev/null; then
         echo "❌ xcrun not found. Please install Xcode."
         exit 1
     fi
-    
+
     if ! xcrun notarytool --version &> /dev/null; then
         echo "❌ notarytool not found. Please update Xcode (requires Xcode 13+)."
         exit 1
     fi
 }
 
-# Main notarization flow
+# Verify the keychain profile resolves; bail with a clear pointer if not.
+verify_keychain_profile() {
+    if ! xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" >/dev/null 2>&1; then
+        echo "❌ Keychain profile '$KEYCHAIN_PROFILE' not found or unreadable."
+        echo ""
+        echo "Run: ./scripts/buildRelease.sh --setup-keychain"
+        echo ""
+        echo "This stores your Apple ID + Team ID + App-Specific Password in"
+        echo "macOS Keychain via xcrun notarytool store-credentials. Touch ID"
+        echo "or passcode prompts on every notarytool access."
+        exit 1
+    fi
+}
+
+# Load .env solely for APPLE_TEAM_ID, used during xcodebuild export plist
+# generation. APPLE_ID and the password are never read from env -- notarytool
+# resolves them from Keychain via --keychain-profile.
+load_env_for_team_id() {
+    if [ -f ".env" ]; then
+        # shellcheck disable=SC1091
+        source .env 2>/dev/null || true
+    fi
+}
+
+# Main notarization flow.
 main() {
     echo "🔏 Notarization Workflow"
     echo ""
-    
-    # Step 1: Verify prerequisites
+
+    # Step 1: Verify prerequisites.
     verify_notarytool
-    
-    # Step 2: Verify credentials
-    CREDS=$(bash scripts/credentials.sh verify)
-    
-    if [ -z "$CREDS" ] || [[ "$CREDS" == "error"* ]]; then
-        echo "❌ Credentials not found"
-        echo ""
-        echo "Setup options:"
-        echo "  1. Keychain: ./buildRelease.sh --setup-keychain"
-        echo "  2. Interactive: Run 'just notarize' and enter app-specific password"
-        echo "  3. Environment: export APPLE_ID and APP_SPECIFIC_PASSWORD"
+    echo "✅ notarytool available"
+
+    verify_keychain_profile
+    echo "✅ Keychain profile '$KEYCHAIN_PROFILE' resolves"
+
+    load_env_for_team_id
+    if [ -z "${APPLE_TEAM_ID:-}" ]; then
+        echo "❌ APPLE_TEAM_ID not set in .env or environment."
+        echo "   Required for code-sign export plist generation."
         exit 1
     fi
-    
-    SOURCE=$(echo "$CREDS" | cut -d'|' -f1)
-    APPLE_ID=$(echo "$CREDS" | cut -d'|' -f2)
-    APP_SPECIFIC_PASSWORD=$(echo "$CREDS" | cut -d'|' -f3)
-    APPLE_TEAM_ID=$(echo "$CREDS" | cut -d'|' -f4)
-    
-    if [ "$SOURCE" = "error" ] || [ -z "$APPLE_ID" ] || [ -z "$APP_SPECIFIC_PASSWORD" ]; then
-        echo "❌ Credential validation failed"
-        exit 1
-    fi
-    
-    echo "✅ Prerequisites verified"
-    echo "   Apple ID: $APPLE_ID"
-    [ -n "$APPLE_TEAM_ID" ] && echo "   Team ID: $APPLE_TEAM_ID"
+    echo "   Team ID:    $APPLE_TEAM_ID  (from .env)"
     echo ""
-    
-    # Step 3: Test credentials with Apple
-    echo "🔐 Testing credentials..."
-    TEST_OUTPUT=$(mktemp)
-    TEST_RESULT=0
-    
-    if [ -n "$APPLE_TEAM_ID" ]; then
-        xcrun notarytool history \
-            --apple-id "$APPLE_ID" \
-            --password "$APP_SPECIFIC_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            > "$TEST_OUTPUT" 2>&1 || TEST_RESULT=$?
-    else
-        xcrun notarytool history \
-            --apple-id "$APPLE_ID" \
-            --password "$APP_SPECIFIC_PASSWORD" \
-            > "$TEST_OUTPUT" 2>&1 || TEST_RESULT=$?
-    fi
-    
-    if [ $TEST_RESULT -ne 0 ]; then
-        echo "❌ Credential test failed"
-        echo ""
-        echo "Error:"
-        cat "$TEST_OUTPUT"
-        rm -f "$TEST_OUTPUT"
+
+    # Step 2: Validate credentials by fetching submission history.
+    # macOS Keychain prompts for Touch ID / passcode here.
+    echo "🔐 Validating credentials (Touch ID prompt expected)..."
+    if ! xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" >/dev/null 2>&1; then
+        echo "❌ Credential validation failed. The keychain profile may be"
+        echo "   storing an invalid or revoked App-Specific Password."
+        echo "   Re-run: ./scripts/buildRelease.sh --setup-keychain"
         exit 1
     fi
-    
-    rm -f "$TEST_OUTPUT"
     echo "✅ Credentials validated"
     echo ""
-    
-    # Step 4: Verify code signing configuration
-    echo "🔑 Checking code signing configuration..."
-    
-    # If we have APPLE_TEAM_ID set, that's enough - Xcode will find the right certificate
-    if [ -n "$APPLE_TEAM_ID" ]; then
-        echo "✅ Code signing configured"
-        echo "   Team ID: $APPLE_TEAM_ID"
-        echo ""
-    else
-        echo "⚠️  No team ID found - will use default code signing identity"
-        echo ""
-    fi
-    
-    # Step 5: Build and archive
+
+    # Step 3: Build and archive.
     echo "📦 Building & archiving (2-3 minutes)..."
-    
-    # Create archive directory
+
     mkdir -p archive
-    
-    # Build and archive
+
     ARCHIVE_PATH="archive/QuickRecorder-$(date +%Y%m%d-%H%M).xcarchive"
     BUILD_LOG="archive/build-$(date +%Y%m%d-%H%M).log"
-    
+
     if ! xcodebuild archive \
         -project QuickRecorder.xcodeproj \
         -scheme QuickRecorder \
@@ -172,12 +103,9 @@ main() {
         echo ""
         echo "Build log: $BUILD_LOG"
         echo ""
-        
-        # Show last 20 lines of log for quick diagnosis
         echo "Last errors in build log:"
         tail -20 "$BUILD_LOG" | grep -E "error:|warning:" || tail -20 "$BUILD_LOG"
         echo ""
-        
         echo "Full log: cat $BUILD_LOG"
         echo ""
         echo "Common fixes:"
@@ -187,14 +115,13 @@ main() {
         echo "  4. Verify certificate: security find-identity -v -p codesigning"
         exit 1
     fi
-    
+
     echo "✅ Archive created"
-    
-    # Export app from archive using proper Xcode export
+
+    # Step 4: Export with Developer ID signing.
     EXPORT_DIR="archive/export-$(date +%Y%m%d-%H%M)"
     EXPORT_OPTIONS_PLIST="archive/ExportOptions.plist"
-    
-    # Create export options plist
+
     cat > "$EXPORT_OPTIONS_PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -203,9 +130,7 @@ main() {
     <key>method</key>
     <string>developer-id</string>
     <key>teamID</key>
-    <string>NSDC3EDS2G</string>
-    <key>signingCertificate</key>
-    <string>Developer ID Application: Jin Wen (NSDC3EDS2G)</string>
+    <string>${APPLE_TEAM_ID}</string>
     <key>uploadSymbols</key>
     <false/>
     <key>compileBitcode</key>
@@ -217,7 +142,7 @@ main() {
 </dict>
 </plist>
 EOF
-    
+
     echo "📤 Exporting with Developer ID signing..."
     if ! xcodebuild -exportArchive \
         -archivePath "$ARCHIVE_PATH" \
@@ -230,99 +155,81 @@ EOF
         tail -30 "$BUILD_LOG.export"
         exit 1
     fi
-    
-    # The exported app will be in EXPORT_DIR/QuickRecorder.app
+
     EXPORT_PATH="$EXPORT_DIR/QuickRecorder.app"
-    
+
     if [ ! -d "$EXPORT_PATH" ]; then
         echo "❌ Exported app not found at: $EXPORT_PATH"
         ls -la "$EXPORT_DIR"
         exit 1
     fi
-    
+
     echo "✅ Exported with Developer ID signing"
-    
-    # Clean AppleDouble files (._* files) that break code signature
+
+    # Step 5: Strip AppleDouble metadata that breaks the code signature.
     echo "🧹 Cleaning AppleDouble files..."
     find "$EXPORT_PATH" -name "._*" -type f -delete 2>/dev/null || true
-    
-    # Create zip for notarization (using --norsrc to avoid resource forks)
+
+    # Step 6: Zip for upload (--norsrc avoids resource forks).
     ZIP_PATH="archive/QuickRecorder-$(date +%Y%m%d-%H%M).zip"
-    
+
     if ! ditto -c -k --norsrc --keepParent "$EXPORT_PATH" "$ZIP_PATH"; then
         echo "❌ Failed to create zip"
         exit 1
     fi
-    
+
     ZIP_SIZE=$(du -h "$ZIP_PATH" | cut -f1)
     echo "✅ Ready for notarization ($ZIP_SIZE)"
     echo ""
-    
-    # Step 6: Submit for notarization
+
+    # Step 7: Submit for notarization.
+    # macOS Keychain may prompt for Touch ID again here.
     echo "🔏 Submitting to Apple..."
-    TEAM_ID="${APPLE_TEAM_ID:-}"
-    
-    NOTARY_LOG="archive/notary-$(date +%Y%m%d-%H%M).log"
-    
     echo "   Uploading... (waiting for response)"
-    
-    if [ -n "$TEAM_ID" ]; then
-        xcrun notarytool submit "$ZIP_PATH" \
-            --apple-id "$APPLE_ID" \
-            --password "$APP_SPECIFIC_PASSWORD" \
-            --team-id "$TEAM_ID" \
-            --wait \
-            --output-format json > archive/notarization.json 2>&1
-    else
-        xcrun notarytool submit "$ZIP_PATH" \
-            --apple-id "$APPLE_ID" \
-            --password "$APP_SPECIFIC_PASSWORD" \
-            --wait \
-            --output-format json > archive/notarization.json 2>&1
-    fi
-    
-    # Parse response
+
+    xcrun notarytool submit "$ZIP_PATH" \
+        --keychain-profile "$KEYCHAIN_PROFILE" \
+        --wait \
+        --output-format json > archive/notarization.json 2>&1
+
+    # Step 8: Parse response and act on status.
     if [ ! -f archive/notarization.json ]; then
         echo "❌ No response from Apple"
         exit 1
     fi
-    
+
     STATUS=$(grep -o '"status":"[^"]*"' archive/notarization.json | head -1 | cut -d'"' -f4)
     SUBMISSION_ID=$(grep -o '"id":"[^"]*"' archive/notarization.json | head -1 | cut -d'"' -f4)
     MESSAGE=$(grep -o '"message":"[^"]*"' archive/notarization.json | head -1 | cut -d'"' -f4)
-    
+
     if [ "$STATUS" = "Accepted" ]; then
         echo "   ✅ Approved!"
         [ -n "$SUBMISSION_ID" ] && echo "   Submission: $SUBMISSION_ID"
         echo ""
-        
-        # Staple the ticket
+
         echo "🔖 Stapling ticket..."
         if xcrun stapler staple "$EXPORT_PATH" 2>&1 | grep -q "Successfully"; then
             echo "✅ Stapled"
         else
             echo "⚠️  Stapling warning (app still notarized)"
         fi
-        
+
         echo ""
         echo "✅ READY FOR DISTRIBUTION"
-        echo "   App: $EXPORT_PATH"
-        echo "   Zip: $ZIP_PATH"
+        echo "   App:  $EXPORT_PATH"
+        echo "   Zip:  $ZIP_PATH"
         echo "   Size: $ZIP_SIZE"
         echo ""
         echo "Next steps:"
         echo "  1. Create .dmg: hdiutil create -volname QuickRecorder -srcfolder \"$EXPORT_PATH\" QuickRecorder.dmg"
         echo "  2. Distribute to users"
-        
+
     elif [ "$STATUS" = "Invalid" ]; then
         echo "   ❌ REJECTED"
         [ -n "$SUBMISSION_ID" ] && echo "   Submission: $SUBMISSION_ID"
         echo ""
         echo "📋 View detailed errors:"
-        echo "   xcrun notarytool log \"$SUBMISSION_ID\" \\"
-        echo "       --apple-id \"$APPLE_ID\" \\"
-        echo "       --password \"<app-specific-password>\" \\"
-        echo "       --team-id \"$TEAM_ID\""
+        echo "   xcrun notarytool log \"$SUBMISSION_ID\" --keychain-profile $KEYCHAIN_PROFILE"
         echo ""
         echo "Common issues:"
         echo "  • Binaries not signed with Developer ID certificate"
@@ -330,18 +237,15 @@ EOF
         echo "  • No timestamp on signature"
         echo "  • Unsigned third-party frameworks"
         exit 1
-        
+
     elif [ "$STATUS" = "In Progress" ]; then
         echo "   ⏳ Still processing..."
         [ -n "$SUBMISSION_ID" ] && echo "   Submission: $SUBMISSION_ID"
         echo ""
         echo "Check status manually:"
-        echo "   xcrun notarytool log \"$SUBMISSION_ID\" \\"
-        echo "       --apple-id \"$APPLE_ID\" \\"
-        echo "       --password \"<app-specific-password>\" \\"
-        echo "       --team-id \"$TEAM_ID\""
+        echo "   xcrun notarytool log \"$SUBMISSION_ID\" --keychain-profile $KEYCHAIN_PROFILE"
         exit 1
-        
+
     else
         echo "   ❌ FAILED"
         [ -n "$STATUS" ] && echo "   Status: $STATUS"
@@ -349,17 +253,18 @@ EOF
         [ -n "$SUBMISSION_ID" ] && echo "   Submission: $SUBMISSION_ID"
         echo ""
         echo "Full response:"
-        cat archive/notarization.json | python3 -m json.tool 2>/dev/null || cat archive/notarization.json
+        python3 -m json.tool < archive/notarization.json 2>/dev/null || cat archive/notarization.json
         echo ""
         echo "Get more details:"
-        echo "   xcrun notarytool log \"$SUBMISSION_ID\" \\"
-        echo "       --apple-id \"$APPLE_ID\" \\"
-        echo "       --password \"<app-specific-password>\" \\"
-        echo "       --team-id \"$TEAM_ID\""
+        echo "   xcrun notarytool log \"$SUBMISSION_ID\" --keychain-profile $KEYCHAIN_PROFILE"
         exit 1
     fi
 }
 
-# Run main
 main
 
+################################################################################
+# Changelog:
+# 2026-10-26  Add changelog block
+# 2026-05-01  Use notarytool --keychain-profile; drop APP_SPECIFIC_PASSWORD env
+################################################################################
