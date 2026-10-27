@@ -32,3 +32,9 @@ echo ""
 # Fetch the log -- macOS Keychain prompts for Touch ID / passcode on access.
 xcrun notarytool log "$SUBMISSION_ID" \
     --keychain-profile "$KEYCHAIN_PROFILE" 2>&1
+
+################################################################################
+# Changelog:
+# 2026-10-26  Add changelog block
+# 2026-05-01  Use notarytool --keychain-profile for info/log lookups
+################################################################################
