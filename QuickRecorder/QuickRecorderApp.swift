@@ -79,10 +79,10 @@ struct QuickRecorderApp: App {
             // Still initialize updater to avoid crashes, but app will terminate
         }
         
-        // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
+        // Updater disabled: Info.plist has no SUFeedURL, so starting it only shows "Unable to Check For Updates"
         // This is where you can also pass an updater delegate if you need one
         updaterController = SPUStandardUpdaterController(
-            startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+            startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
     }
 
     var body: some Scene {
