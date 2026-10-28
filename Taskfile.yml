@@ -43,6 +43,7 @@ tasks:
       - echo "    task archive            Create .xcarchive (auto-runs release)"
       - echo "    task export-app         Export .app to Desktop"
       - echo "    task create-dmg         Create DMG from app (auto-finds latest export)"
+      - echo "    task install-app        Replace /Applications/QuickRecorder.app (backup + downgrade guard)"
       - echo "    task gh-release         Create GitHub release with DMG/ZIP"
       - echo "    task update-homebrew    Update Homebrew cask with latest DMG"
       - echo "    task notarize           Build, archive, notarize (auto-runs deps)"
@@ -229,13 +230,17 @@ tasks:
       - cmd: |
           DEST="$HOME/Desktop/release"
           mkdir -p "$DEST"
-          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "QuickRecorder.app" -type d -path "*/Release/*" 2>/dev/null | head -1)
+          # Newest Release build by mtime, not first find match
+          APP_PATH=$(ls -td ~/Library/Developer/Xcode/DerivedData/QuickRecorder-*/Build/Products/Release/QuickRecorder.app 2>/dev/null | head -1)
           if [ -n "$APP_PATH" ]; then
-            cp -R "$APP_PATH" "$DEST/"
+            # Replace wholesale: cp -R into an existing bundle merges and leaves stale files
+            rm -rf "${DEST:?}/QuickRecorder.app"
+            ditto "$APP_PATH" "$DEST/QuickRecorder.app"
             SIZE=$(du -h "$DEST/QuickRecorder.app" | cut -f1)
             echo "✅ Exported: $DEST/QuickRecorder.app ($SIZE)"
           else
             echo "❌ No release build found. Run 'task release' first."
+            exit 1
           fi
 
   create-dmg:
@@ -246,6 +251,11 @@ tasks:
       - chmod +x scripts/create-dmg.sh
       - cmd: bash scripts/create-dmg.sh {{.CLI_ARGS}}
         ignore_error: false
+
+  install-app:
+    desc: "Install build into /Applications (usage: task install-app -- [--force] [--dry-run] [app_path])"
+    cmds:
+      - bash scripts/install-app.sh {{.CLI_ARGS}}
 
   notarize:
     desc: Build, archive, and notarize
@@ -415,3 +425,9 @@ tasks:
       - ci-test
     cmds:
       - echo "✅ CI check passed"
+
+# ##############################################################################
+# Changelog:
+# 2026-10-27  Fix export-app: newest build, wholesale replace, fail if none
+# 2026-10-27  Add install-app task (safe replace of /Applications app)
+# ##############################################################################
