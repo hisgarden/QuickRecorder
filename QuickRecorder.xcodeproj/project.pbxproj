@@ -405,7 +405,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Sentry Debug Symbols Upload\n# Only upload for Release builds to avoid unnecessary uploads during development\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Sentry debug symbols upload for ${CONFIGURATION} build\"\n  exit 0\nfi\n\n# Skip if code signing is disabled (common during archive for distribution)\nif [ \"${CODE_SIGNING_ALLOWED}\" = \"NO\" ] || [ -z \"${CODE_SIGN_IDENTITY}\" ] || [ \"${CODE_SIGN_IDENTITY}\" = \"-\" ]; then\n  echo \"Skipping Sentry debug symbols upload for ${CONFIGURATION} build (code signing disabled)\"\n  exit 0\nfi\n\n# Ensure sentry-cli is available\nif ! command -v sentry-cli >/dev/null 2>&1; then\n  echo \"warning: sentry-cli not found. Install with: brew install getsentry/tools/sentry-cli\"\n  exit 0\nfi\n\n# Check if dSYM folder exists\nif [ -z \"${DWARF_DSYM_FOLDER_PATH}\" ] || [ ! -d \"${DWARF_DSYM_FOLDER_PATH}\" ]; then\n  echo \"warning: dSYM folder not found at ${DWARF_DSYM_FOLDER_PATH}\"\n  exit 0\nfi\n\n# Upload debug symbols using .sentryclirc for authentication\n# sentry-cli will automatically read org/project from .sentryclirc [defaults] section\necho \"Uploading debug symbols to Sentry...\"\nset +e\nERROR=$(sentry-cli debug-files upload \\\n  --include-sources \\\n  \"${DWARF_DSYM_FOLDER_PATH}\" 2>&1)\nEXIT_CODE=$?\nset -e\n\nif [ $EXIT_CODE -eq 0 ]; then\n  echo \"✅ Successfully uploaded debug symbols to Sentry\"\nelse\n  echo \"warning: Sentry debug symbols upload failed: $ERROR\"\n  # Don't fail the build if Sentry upload fails\nfi\n\n# Always exit 0 to prevent build failures\nexit 0\n";
+			shellScript = "# Sentry Debug Symbols Upload\n# Only upload for Release builds to avoid unnecessary uploads during development\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Sentry debug symbols upload for ${CONFIGURATION} build\"\n  exit 0\nfi\n\n# Skip if code signing is disabled (common during archive for distribution)\nif [ \"${CODE_SIGNING_ALLOWED}\" = \"NO\" ] || [ -z \"${CODE_SIGN_IDENTITY}\" ] || [ \"${CODE_SIGN_IDENTITY}\" = \"-\" ]; then\n  echo \"Skipping Sentry debug symbols upload for ${CONFIGURATION} build (code signing disabled)\"\n  exit 0\nfi\n\n# Ensure sentry-cli is available\nif ! command -v sentry-cli >/dev/null 2>&1; then\n  echo \"warning: sentry-cli not found. Install with: brew install getsentry/tools/sentry-cli\"\n  exit 0\nfi\n\n# Check if dSYM folder exists\nif [ -z \"${DWARF_DSYM_FOLDER_PATH}\" ] || [ ! -d \"${DWARF_DSYM_FOLDER_PATH}\" ]; then\n  echo \"warning: dSYM folder not found at ${DWARF_DSYM_FOLDER_PATH}\"\n  exit 0\nfi\n\n# Upload debug symbols using .sentryclirc for authentication\n# sentry-cli will automatically read org/project from .sentryclirc [defaults] section\necho \"Uploading debug symbols to Sentry...\"\nset +e\nERROR=$(sentry-cli debug-files upload \\\n  --include-sources \\\n  \"${DWARF_DSYM_FOLDER_PATH}\" 2>&1)\nEXIT_CODE=$?\nset -e\n\nif [ $EXIT_CODE -eq 0 ]; then\n  echo \"✅ Successfully uploaded debug symbols to Sentry\"\nelse\n  echo \"warning: Sentry debug symbols upload failed: ${ERROR//error:/}\"\n  # Don't fail the build if Sentry upload fails\nfi\n\n# Always exit 0 to prevent build failures\nexit 0\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -508,7 +508,7 @@
 				CODE_SIGNING_REQUIRED = YES;
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 171;
+				CURRENT_PROJECT_VERSION = 172;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NSDC3EDS2G;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -523,7 +523,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.3;
-				MARKETING_VERSION = 1.7.1;
+				MARKETING_VERSION = 1.7.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
@@ -572,7 +572,7 @@
 				CODE_SIGNING_REQUIRED = YES;
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 171;
+				CURRENT_PROJECT_VERSION = 172;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = NSDC3EDS2G;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -593,7 +593,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.3;
-				MARKETING_VERSION = 1.7.1;
+				MARKETING_VERSION = 1.7.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
