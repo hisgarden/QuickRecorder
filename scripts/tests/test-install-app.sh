@@ -129,11 +129,28 @@ echo "missing source fails cleanly"
 reset 1.7.1 171
 if run_install "$WORK/does-not-exist.app"; then fail "non-zero exit"; else pass "non-zero exit"; fi
 
+echo "source with unreadable version is refused (downgrade guard cannot be skipped)"
+reset 1.7.1 171
+make_app "$WORK/src" 1.6.0 160
+plutil -remove CFBundleShortVersionString "$WORK/src/QuickRecorder.app/Contents/Info.plist"
+codesign --force --sign - "$WORK/src/QuickRecorder.app" 2>/dev/null
+if run_install "$WORK/src/QuickRecorder.app"; then fail "non-zero exit"; else pass "non-zero exit"; fi
+assert_eq "installed app untouched" 1.7.1 "$(installed_version)"
+
+echo "failed copy restores the previous app"
+reset 1.7.1 171
+make_app "$WORK/src" 1.7.2 172
+mkdir -p "$WORK/bin"; printf '#!/bin/sh\nexit 1\n' > "$WORK/bin/ditto"; chmod +x "$WORK/bin/ditto"
+if PATH="$WORK/bin:$PATH" run_install "$WORK/src/QuickRecorder.app"; then fail "non-zero exit"; else pass "non-zero exit"; fi
+assert_eq "previous app restored" 1.7.1 "$(installed_version)"
+assert_eq "no stray backup left" "" "$(ls "$BACKUP_ROOT")"
+
 echo ""
 echo "Passed: $PASS  Failed: $FAIL"
 [ "$FAIL" -eq 0 ]
 
 ################################################################################
 # Changelog:
+# 2026-10-29  Add unreadable-version and rollback tests
 # 2026-10-27  Add tests for install-app.sh (upgrade, downgrade guard, safety)
 ################################################################################

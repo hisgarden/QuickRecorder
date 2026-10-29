@@ -97,6 +97,8 @@ main() {
     local new_ver new_build
     new_ver="$(plist_value "$src" CFBundleShortVersionString)"
     new_build="$(plist_value "$src" CFBundleVersion)"
+    [ -n "$new_ver" ] && [ -n "$new_build" ] \
+        || die "Cannot read version from $src/Contents/Info.plist"
     echo "📦 Source:    $new_ver ($new_build)  $src"
 
     if [ -e "$target" ]; then
@@ -127,18 +129,25 @@ main() {
         return 0
     fi
 
+    local backup_dir=""
     if [ -e "$target" ]; then
         quit_if_running "$target"
-        local backup_dir
         backup_dir="$backup_root/installed-backup-$(date +%Y-%m-%d-%H%M%S)"
         mkdir -p "$backup_dir"
         mv "$target" "$backup_dir/"
         echo "🗄  Backed up previous app to $backup_dir/$APP_NAME"
     fi
 
-    ditto "$src" "$target"
-    codesign --verify --deep --strict "$target" \
-        || die "Installed app failed signature check; previous app is in the backup dir"
+    # From here on a failure must put the previous app back, or nothing is installed.
+    if ! ditto "$src" "$target" || ! codesign --verify --deep --strict "$target"; then
+        rm -rf "$target"
+        if [ -n "$backup_dir" ]; then
+            mv "$backup_dir/$APP_NAME" "$target"
+            rmdir "$backup_dir" 2>/dev/null || true
+            die "Install failed; restored previous app at $target"
+        fi
+        die "Install failed; nothing installed at $target"
+    fi
     echo "✅ Installed QuickRecorder $new_ver ($new_build) to $target"
 }
 
@@ -149,5 +158,6 @@ fi
 
 ################################################################################
 # Changelog:
+# 2026-10-29  Refuse unreadable source version; roll back if copy/verify fails
 # 2026-10-27  Add install-app.sh: safe replace with backup and downgrade guard
 ################################################################################
