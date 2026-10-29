@@ -331,19 +331,26 @@ if [ "$EXPORT" = true ]; then
     DEST_DIR="$HOME/Desktop/release"
     mkdir -p "$DEST_DIR"
     
-    # Find latest release build
-    APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "QuickRecorder.app" -type d -path "*/Release/*" 2>/dev/null | head -1)
-    
+    # Find latest release build (newest by mtime, not first match)
+    APP_PATH=$(ls -td ~/Library/Developer/Xcode/DerivedData/QuickRecorder-*/Build/Products/Release/QuickRecorder.app 2>/dev/null | head -1)
+
     if [ -z "$APP_PATH" ]; then
         echo -e "${RED}❌ No Release build found in DerivedData${NC}"
         exit 1
     fi
-    
-    cp -R "$APP_PATH" "$DEST/"
-    SIZE=$(du -h "$DEST/QuickRecorder.app" | cut -f1)
-    echo -e "${GREEN}✓${NC} Exported: $DEST/QuickRecorder.app ($SIZE)"
+
+    # Replace wholesale: cp -R into an existing bundle merges and leaves stale files
+    rm -rf "${DEST_DIR:?}/QuickRecorder.app"
+    ditto "$APP_PATH" "$DEST_DIR/QuickRecorder.app"
+    SIZE=$(du -h "$DEST_DIR/QuickRecorder.app" | cut -f1)
+    echo -e "${GREEN}✓${NC} Exported: $DEST_DIR/QuickRecorder.app ($SIZE)"
 fi
 
 echo -e "\n${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  ✅ Build Complete!${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
+
+################################################################################
+# Changelog:
+# 2026-10-27  Fix --export: undefined $DEST, merge-copy, and stale build pick
+################################################################################

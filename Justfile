@@ -64,6 +64,7 @@ default:
     @echo "  just archive        Create .xcarchive"
     @echo "  just export         Export .app to Desktop"
     @echo "  just create-dmg     Create DMG from app (auto-finds latest export)"
+    @echo "  just install-app    Replace /Applications/QuickRecorder.app (backup + downgrade guard)"
     @echo "  just notarize       Build + archive + notarize"
     @echo "  just publish        Complete release: DMG + appcast + git push"
     @echo "  just appcast        Generate/update appcast.xml"
@@ -264,6 +265,15 @@ export-app:
 create-dmg app_path="":
     @chmod +x scripts/create-dmg.sh
     @bash scripts/create-dmg.sh {{app_path}}
+
+# Install a build into /Applications: backs up the old app, refuses downgrades
+# Usage: just install-app [--force] [--dry-run] [app_path]
+# Examples:
+#   just install-app                                          # Latest Release build
+#   just install-app --dry-run                                # Show what would happen
+#   just install-app archive/export-*/QuickRecorder.app       # Use specific app
+install-app *args:
+    @bash scripts/install-app.sh {{args}}
 
 # Build + archive + notarize (requires Apple ID credentials)
 # Supports: Keychain (secure), .env file, or environment variables
